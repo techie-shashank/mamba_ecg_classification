@@ -1,0 +1,6 @@
+{
+  "data_dir": "./../data/raw/physionet.org/files/ptb-xl/1.0.3/",
+  "sampling_rate": 100,
+  "limit": 1000,
+  "is_multilabel": false
+}

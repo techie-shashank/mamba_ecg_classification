@@ -1,3 +1,3 @@
-[submodule "src/mamba"]
-	path = src/mamba
+[submodule "src/models/mamba"]
+	path = src/models/mamba
 	url = https://github.com/state-spaces/mamba

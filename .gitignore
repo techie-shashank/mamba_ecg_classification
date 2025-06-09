@@ -1,3 +1,7 @@
 data/
 experiments/
 .idea/
+configs/__pycache__/
+__pycache__/
+logfile.log
+saved_model/
