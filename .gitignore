@@ -1,4 +1,4 @@
-data/
+/data/
 experiments/
 .idea/
 __pycache__/
