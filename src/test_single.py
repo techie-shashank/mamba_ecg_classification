@@ -1,8 +1,8 @@
 import argparse
 import logging
 import torch
-from src.data.dataset_handler import DatasetHandler
-from src.utils import get_config_for_testing, get_model_class
+from data.dataset_handler import DatasetHandler
+from utils import get_config_for_testing, get_model_class
 
 
 def main():

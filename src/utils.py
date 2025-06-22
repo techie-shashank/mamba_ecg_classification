@@ -11,11 +11,11 @@ import logging
 
 from torch.utils.data import DataLoader
 
-from src.data.dataset_handler import DatasetHandler
-from src.models.classifiers.fcn import FCNClassifier
-from src.models.classifiers.lstm import LSTMClassifier
-from src.models.classifiers.mamba_model import MambaClassifier
-from src.logger import logger
+from data.dataset_handler import DatasetHandler
+from models.classifiers.fcn import FCNClassifier
+from models.classifiers.lstm import LSTMClassifier
+from models.classifiers.mamba_model import MambaClassifier
+from logger import logger
 
 
 def get_model_class(model_type):

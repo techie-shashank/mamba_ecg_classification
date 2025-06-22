@@ -7,7 +7,7 @@ class DatasetHandler:
 
     def _get_handler(self):
         if self.dataset_name == "ptbxl":
-            from src.data.ptbxl.handler import PTBXLHandler
+            from data.ptbxl.handler import PTBXLHandler
             return PTBXLHandler(self.config)
         else:
             raise ValueError(f"Unsupported dataset: {self.dataset_name}")

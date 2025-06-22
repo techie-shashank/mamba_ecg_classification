@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from src.logger import logger
+from logger import logger
 
 
 def split_train_test(X, Y, test_fold=10, val_ratio=0.5):

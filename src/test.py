@@ -2,8 +2,8 @@ import argparse
 import os
 
 import torch
-from src import utils
-from src.logger import logger, configure_logger
+import utils
+from logger import logger, configure_logger
 
 
 def parse_arguments():

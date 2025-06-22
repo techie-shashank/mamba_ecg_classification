@@ -1,8 +1,8 @@
 import argparse
 import os
-from src.logger import configure_logger, logger
-from src.train import train, get_experiments_dir
-from src.test import test_model
+from logger import configure_logger, logger
+from train import train, get_experiments_dir
+from test import test_model
 
 
 def parse_arguments():

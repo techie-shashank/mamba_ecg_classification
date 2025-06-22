@@ -29,7 +29,7 @@ class PTBXLHandler:
         self.binary_classes = None
 
     def load_data(self):
-        from src.data.ptbxl import loaders
+        from data.ptbxl import loaders
         return loaders.load_data(
             data_dir=self.config["data_dir"],
             sampling_rate=self.config["sampling_rate"],
@@ -37,11 +37,11 @@ class PTBXLHandler:
         )
 
     def split_data(self, X, Y):
-        from src.data.ptbxl import utils
+        from data.ptbxl import utils
         return utils.split_train_test(X, Y)
 
     def preprocess_data(self, X, Y, mlb=None):
-        from src.data.ptbxl import preprocessing
+        from data.ptbxl import preprocessing
         is_multilabel = self.config.get("is_multilabel", False)
         if is_multilabel:
             X, Y, mlb = preprocessing.preprocess_data(X, Y, self.mlb)
@@ -52,7 +52,7 @@ class PTBXLHandler:
         return X, Y
 
     def get_dataset(self, X, Y):
-        from src.data.ptbxl.dataset import PTBXL
+        from data.ptbxl.dataset import PTBXL
         return PTBXL(X, Y)
 
     def visualize_record(self, X, idx, true_labels, preds):

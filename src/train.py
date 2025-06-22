@@ -5,10 +5,10 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from src.models.classifiers.fcn import FCNClassifier
-from src.models.classifiers.lstm import LSTMClassifier
-from src.utils import load_and_prepare_data, train_model, get_config_for_training, get_model_class
-from src.logger import logger, configure_logger
+from models.classifiers.fcn import FCNClassifier
+from models.classifiers.lstm import LSTMClassifier
+from utils import load_and_prepare_data, train_model, get_config_for_training, get_model_class
+from logger import logger, configure_logger
 
 
 def parse_arguments():

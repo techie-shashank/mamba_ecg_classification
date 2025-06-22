@@ -5,15 +5,19 @@ import numpy as np
 from sklearn.preprocessing import MultiLabelBinarizer
 
 
-def normalize_ecg_signals(X):
+def normalize_ecg_signals(X, eps=1e-8):
     """
     Normalize ECG signals using Z-score normalization.
     Args:
         X (np.ndarray): Raw ECG signals.
+        eps (float): Small value to avoid division by zero.
     Returns:
         np.ndarray: Normalized ECG signals.
     """
-    return (X - X.mean(axis=1, keepdims=True)) / X.std(axis=1, keepdims=True)
+    mean = X.mean(axis=1, keepdims=True)
+    std = X.std(axis=1, keepdims=True)
+    std = np.where(std < eps, eps, std)  # Prevent division by zero
+    return (X - mean) / std
 
 
 def filter_non_empty_labels(X, Y, label_col='diagnostic'):
