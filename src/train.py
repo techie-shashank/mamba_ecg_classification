@@ -5,8 +5,10 @@ import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 from models.classifiers.fcn import FCNClassifier
 from models.classifiers.lstm import LSTMClassifier
+from data.data_loader import load_and_prepare
 from utils import load_and_prepare_data, train_model, get_config_for_training, get_model_class
 from logger import logger, configure_logger
 
@@ -50,6 +52,13 @@ def get_experiments_dir(dataset, model):
     return experiment_dir
 
 
+def calculate_class_weights(y_train):
+    n_samples, n_classes = y_train.shape
+    class_counts = np.sum(y_train, axis=0)
+    class_weights = n_samples / (n_classes * (class_counts + 1e-6))  # Avoid divide by zero
+    return torch.FloatTensor(class_weights)
+
+
 def setup_model(model_name, X_train, y_train, device, learning_rate):
     """
     Initialize the model, criterion, and optimizer.
@@ -72,7 +81,15 @@ def setup_model(model_name, X_train, y_train, device, learning_rate):
 
     model_class = get_model_class(model_name)
     model = model_class(input_channels, time_steps, num_classes).to(device)
-    criterion = nn.BCEWithLogitsLoss() if num_classes > 2 else nn.CrossEntropyLoss()
+
+    if num_classes > 2:
+        class_weights = calculate_class_weights(y_train).to(device)
+        criterion = nn.BCEWithLogitsLoss(pos_weight=class_weights)
+        logger.info(f"Using BCEWithLogitsLoss with class weights: {class_weights}")
+    else:
+        criterion = nn.CrossEntropyLoss()
+        logger.info("Using CrossEntropyLoss for binary classification.")
+
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
     return model, criterion, optimizer
@@ -93,12 +110,11 @@ def train(dataset_name, model_name, save_dir):
     learning_rate = config["learning_rate"]
 
     # Prepare data
-    train_loader, dataset_handler, X_train, y_train = load_and_prepare_data(
-        dataset_name=dataset_name, config=config, split="train", batch_size=batch_size
-    )
-    val_loader, _, X_val, y_val = load_and_prepare_data(
-        dataset_name=dataset_name, config=config, split="val", batch_size=batch_size
-    )
+    loaders, datasets, data_arrays, metadata = load_and_prepare(dataset_name, config)
+    train_loader = loaders['train']
+    val_loader = loaders['val']
+    X_train, y_train = data_arrays['train']
+
     # Model setup
     model, criterion, optimizer = setup_model(model_name, X_train, y_train, device, learning_rate)
 

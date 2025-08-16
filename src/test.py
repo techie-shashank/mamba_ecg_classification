@@ -4,6 +4,7 @@ import os
 import torch
 import utils
 from logger import logger, configure_logger
+from data.data_loader import load_and_prepare
 
 
 def parse_arguments():
@@ -27,9 +28,10 @@ def test_model(dataset_name, model_name, base_dir):
     batch_size = config["batch_size"]
 
     # Prepare data
-    test_loader, dataset_handler, X_test, y_test = utils.load_and_prepare_data(
-        dataset_name=dataset_name, config=config, split="test", batch_size=batch_size
-    )
+    loaders, datasets, data_arrays, metadata = load_and_prepare(dataset_name, config)
+    test_loader = loaders['test']
+    X_test, y_test = data_arrays['test']
+
     # Model setup
     sample_X = X_test[0]
     time_steps = sample_X.shape[0]
@@ -41,8 +43,8 @@ def test_model(dataset_name, model_name, base_dir):
     # Evaluation
     criterion = torch.nn.BCEWithLogitsLoss() if num_classes > 2 else torch.nn.CrossEntropyLoss()
     is_multilabel = num_classes > 2
-
-    utils.evaluate_and_save_metrics(dataset_name, model_name, model, test_loader, criterion, device, is_multilabel, logger, dataset_handler, base_dir)
+    classes = metadata['classes']
+    utils.evaluate_and_save_metrics(model, test_loader, criterion, device, is_multilabel, classes, base_dir)
 
 
 if __name__ == "__main__":

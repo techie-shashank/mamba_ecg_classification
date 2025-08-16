@@ -2,16 +2,15 @@ import json
 import os
 import matplotlib.pyplot as plt
 import torch
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    roc_auc_score, multilabel_confusion_matrix, ConfusionMatrixDisplay
-)
+from sklearn.metrics import (f1_score, accuracy_score, precision_score, recall_score,
+                             roc_auc_score, hamming_loss, multilabel_confusion_matrix,
+                             classification_report, confusion_matrix, ConfusionMatrixDisplay)
 import numpy as np
 import logging
 
 from torch.utils.data import DataLoader
 
-from data.dataset_handler import DatasetHandler
+from data.data_loader import load_and_prepare
 from models.classifiers.fcn import FCNClassifier
 from models.classifiers.lstm import LSTMClassifier
 from models.classifiers.mamba_model import MambaClassifier
@@ -80,73 +79,129 @@ def get_config_for_testing(config_base_path):
     return config
 
 
-def calculate_store_metrics(y_true, y_prob, threshold=0.5, save_dir="metrics_results", class_names=None):
-    """
-    Evaluate model predictions and save metrics.
-
-    Args:
-        y_true (np.ndarray): True labels.
-        y_prob (np.ndarray): Predicted probabilities.
-        threshold (float): Threshold for binary classification.
-        save_dir (str): Directory to save the metrics results.
-    """
-    if not os.path.exists(save_dir):
-        os.makedirs(save_dir)
-
-    # Convert probabilities to binary predictions
-    y_pred = (y_prob > threshold).astype(int)
-
-    # Calculate metrics
-    accuracy = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred, average='macro')
-    recall = recall_score(y_true, y_pred, average='macro')
-    f1 = f1_score(y_true, y_pred, average='macro')
-
-    try:
-        roc_auc = roc_auc_score(y_true, y_pred, average='macro')
-    except ValueError:
-        roc_auc = float('nan')  # In case AUC cannot be computed due to label imbalance
-
-    cm = multilabel_confusion_matrix(y_true, y_pred)
-
-    # Save metrics to a JSON file
-    metrics = {
-        "accuracy": accuracy,
-        "precision": precision,
-        "recall": recall,
-        "f1_score": f1,
-        "roc_auc": roc_auc,
-        "confusion_matrix": cm.tolist()
-    }
-
-    with open(os.path.join(save_dir, 'metrics.json'), 'w') as f:
-        json.dump(metrics, f, indent=4)
-
-    # Plot confusion matrices
-    n_classes = cm.shape[0]
+def plot_multilabel_confusion_matrices(multilabel_cm, class_names, save_path):
+    n_classes = len(class_names)
     cols = 4
     rows = int(np.ceil(n_classes / cols))
     fig, axes = plt.subplots(rows, cols, figsize=(4 * cols, 4 * rows))
     axes = axes.flatten()
 
     for i in range(n_classes):
-        disp = ConfusionMatrixDisplay(cm[i],
-                                      display_labels=[f'Not {class_names[i]}' if class_names else 'Negative',
-                                                      class_names[i] if class_names else f'Class {i}']
-                                      )
+        disp = ConfusionMatrixDisplay(multilabel_cm[i],
+                                      display_labels=[f'Not {class_names[i]}', class_names[i]])
         disp.plot(ax=axes[i], cmap='Blues', colorbar=False)
-        axes[i].set_title(class_names[i] if class_names else f'Class {i}')
+        axes[i].set_title(class_names[i])
         axes[i].set_xlabel('Predicted')
         axes[i].set_ylabel('Actual')
 
     for j in range(n_classes, len(axes)):
-        fig.delaxes(axes[j])  # remove extra axes
+        fig.delaxes(axes[j])
 
     plt.tight_layout()
-    plt.savefig(os.path.join(save_dir, 'confusion_matrices.png'))
+    plt.savefig(save_path)
     plt.close()
 
-    logger.info("Metrics and confusion matrices saved successfully.")
+
+def calculate_binary_classification_metrics(y_true_binary, y_pred_binary, y_prob_binary, class_names):
+    """Binary classification metrics for Normal vs Abnormal"""
+
+    try:
+        auc = roc_auc_score(y_true_binary, y_prob_binary)
+    except ValueError:
+        auc = float('nan')
+
+    metrics = {
+        "binary_accuracy": accuracy_score(y_true_binary, y_pred_binary),
+        "binary_f1": f1_score(y_true_binary, y_pred_binary, zero_division=0),
+        "binary_precision": precision_score(y_true_binary, y_pred_binary, zero_division=0),
+        "binary_recall": recall_score(y_true_binary, y_pred_binary, zero_division=0),
+        "binary_auc": auc,
+        "confusion_matrix": confusion_matrix(y_true_binary, y_pred_binary).tolist(),
+        "classification_report": classification_report(y_true_binary, y_pred_binary, target_names=class_names, zero_division=0, output_dict=True)
+    }
+    return metrics
+
+def calculate_multilabel_metrics(y_true_multi, y_pred_multi, y_prob_multi, class_names):
+    """Multi-label metrics for diagnostic superclasses"""
+
+    try:
+        macro_roc_auc = roc_auc_score(y_true_multi, y_prob_multi, average='macro')
+    except ValueError:
+        macro_roc_auc = float('nan')
+
+    metrics = {
+        "macro_f1": f1_score(y_true_multi, y_pred_multi, average='macro', zero_division=0),
+        "macro_precision": precision_score(y_true_multi, y_pred_multi, average='macro', zero_division=0),
+        "macro_recall": recall_score(y_true_multi, y_pred_multi, average='macro', zero_division=0),
+        "macro_roc_auc": macro_roc_auc,
+        "hamming_loss": hamming_loss(y_true_multi, y_pred_multi),
+        "subset_accuracy": accuracy_score(y_true_multi, y_pred_multi),
+        "classification_report": classification_report(y_true_multi, y_pred_multi, target_names=class_names, output_dict=True, zero_division=0),
+        "multilabel_confusion_matrix": multilabel_confusion_matrix(y_true_multi, y_pred_multi).tolist()
+    }
+    return metrics
+
+
+def calculate_store_metrics(y_true, y_prob, y_pred, save_dir="metrics_results", class_names=None, is_multilabel=False):
+    """
+    Evaluate model predictions and save metrics, including classification report.
+
+    Args:
+        y_true (np.ndarray): True labels.
+        y_prob (np.ndarray): Predicted probabilities.
+        threshold (float): Threshold for binary classification.
+        save_dir (str): Directory to save the metrics results.
+        class_names (list, optional): List of class names.
+    """
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    if is_multilabel:
+        print(f"[Evaluation] Running Multi-Label Classification Evaluation...")
+
+        metrics = calculate_multilabel_metrics(
+            y_true_multi=y_true,
+            y_pred_multi=y_pred,
+            y_prob_multi=y_prob,
+            class_names=class_names
+        )
+
+        print("\n[Multi-Label Classification Results]")
+        print(f"Macro Precision : {metrics['macro_precision']:.4f}")
+        print(f"Macro Recall    : {metrics['macro_recall']:.4f}")
+        print(f"Macro F1 Score  : {metrics['macro_f1']:.4f}")
+        print(f"Macro ROC AUC   : {metrics['macro_roc_auc']:.4f}")
+
+        # Optional: Save confusion matrix plot for multi-label
+        plot_multilabel_confusion_matrices(
+            np.array(metrics['multilabel_confusion_matrix']),
+            class_names,
+            os.path.join(save_dir, 'multilabel_confusion_matrices.png')
+        )
+
+    else:
+        print(f"[Evaluation] Running Binary Classification Evaluation...")
+
+        metrics = calculate_binary_classification_metrics(
+            y_true_binary=y_true,
+            y_pred_binary=y_pred,
+            y_prob_binary=y_prob,
+            class_names=class_names
+        )
+
+        # ✅ Print Important Binary Metrics
+        print("\n[Binary Classification Results]")
+        print(f"Accuracy      : {metrics['binary_accuracy']:.4f}")
+        print(f"Precision     : {metrics['binary_precision']:.4f}")
+        print(f"Recall        : {metrics['binary_recall']:.4f}")
+        print(f"F1 Score      : {metrics['binary_f1']:.4f}")
+        print(f"ROC AUC       : {metrics['binary_auc']:.4f}")
+
+    # Save metrics
+    with open(os.path.join(save_dir, 'metrics.json'), 'w') as f:
+        json.dump(metrics, f, indent=4)
+
+    print(f"[Evaluation] Metrics saved at {save_dir}")
 
 
 def load_and_prepare_data(dataset_name, config, split="train", batch_size=None):
@@ -165,35 +220,8 @@ def load_and_prepare_data(dataset_name, config, split="train", batch_size=None):
         np.ndarray: Input data (X) for the specified split.
         np.ndarray: Labels (Y) for the specified split.
     """
-    dataset_handler = DatasetHandler(dataset_name=dataset_name, config=config)
-
-    logger.info(f"Loading data for dataset: {dataset_name}")
-    X, Y = dataset_handler.load_data()
-    logger.info("Loaded raw data: %s", X.shape)
-    logger.info("Labels shape: %s", Y.shape)
-
-    logger.info("Splitting data into training, validation, and test sets.")
-    X_train, y_train, X_val, y_val, X_test, y_test = dataset_handler.split_data(X, Y)
-
-    if split == "train":
-        X_split, y_split = X_train, y_train
-    elif split == "val":
-        X_split, y_split = X_val, y_val
-    elif split == "test":
-        X_split, y_split = X_test, y_test
-    else:
-        raise ValueError(f"Invalid split: {split}. Choose from 'train', 'val', or 'test'.")
-
-    logger.info(f"Preprocessing {split} data.")
-    X_split, y_split = dataset_handler.preprocess_data(X_split, y_split)
-    logger.info(f"{split.capitalize()} data preprocessing completed.")
-
-    logger.info(f"Creating {split} DataLoader.")
-    dataset = dataset_handler.get_dataset(X_split, y_split)
-    dataloader = DataLoader(dataset, batch_size=batch_size or config["batch_size"], shuffle=(split == "train"))
-    logger.info(f"{split.capitalize()} DataLoader created successfully.")
-
-    return dataloader, dataset_handler, X_split, y_split
+    data_loader, X, Y = load_and_prepare(dataset_name, config)
+    return data_loader, dataset_name, X, Y
 
 def setup_model(model_type, dataset_name, num_classes, input_channels, time_steps, device, model_dir):
     """
@@ -236,6 +264,7 @@ def evaluate_model(model, test_loader, criterion, device, is_multilabel, logger)
     correct, total = 0, 0
     all_probs = []
     all_labels = []
+    all_preds = []
 
     with torch.no_grad():
         for X_batch, y_batch in test_loader:
@@ -262,6 +291,7 @@ def evaluate_model(model, test_loader, criterion, device, is_multilabel, logger)
 
             total += y_batch.size(0)
             all_probs.append(probs.cpu().numpy())
+            all_preds.append(preds.cpu().numpy())
             all_labels.append(y_batch.cpu().numpy())
 
     avg_test_loss = test_loss / len(test_loader)
@@ -270,11 +300,12 @@ def evaluate_model(model, test_loader, criterion, device, is_multilabel, logger)
 
     all_probs = np.concatenate(all_probs, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
+    all_preds = np.concatenate(all_preds, axis=0)
 
-    return avg_test_loss, test_acc, all_probs, all_labels
+    return avg_test_loss, test_acc, all_probs, all_labels, all_preds
 
 
-def evaluate_and_save_metrics(dataset_name, model_name, model, test_loader, criterion, device, is_multilabel, logger, dataset_handler, save_dir):
+def evaluate_and_save_metrics(model, test_loader, criterion, device, is_multilabel, classes, save_dir):
     """
     Evaluate the model and save metrics.
 
@@ -292,23 +323,14 @@ def evaluate_and_save_metrics(dataset_name, model_name, model, test_loader, crit
     Returns:
         None
     """
-    avg_test_loss, test_acc, all_probs, all_labels = evaluate_model(
+    avg_test_loss, test_acc, all_probs, all_labels, all_preds = evaluate_model(
         model, test_loader, criterion, device, is_multilabel, logger
     )
 
-    # Concatenate all batches
-
-    # If multiclass single-label (CrossEntropy), convert to one-hot for evaluation
-    if not is_multilabel:
-        num_classes = all_probs.shape[1]
-        y_true_onehot = np.zeros_like(all_probs)
-        y_true_onehot[np.arange(all_labels.shape[0]), all_labels] = 1
-        all_labels = y_true_onehot
-
     # Evaluate and save metrics
     calculate_store_metrics(
-        all_labels, all_probs, threshold=0.5, save_dir=f"{save_dir}/metrics_results",
-        class_names=list(dataset_handler.handler.mlb.classes_) if is_multilabel else dataset_handler.handler.binary_classes
+        all_labels, all_probs, all_preds, save_dir=f"{save_dir}/metrics_results",
+        class_names=classes, is_multilabel=is_multilabel
     )
 
 
