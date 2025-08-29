@@ -1,127 +1,128 @@
+
+# ========== Standard Library Imports ==========
+import os
 import json
 import argparse
-import os
 
+# ========== Third-Party Imports ==========
 import torch
-import torch.nn as nn
 import torch.optim as optim
-import numpy as np
-from models.classifiers.fcn import FCNClassifier
-from models.classifiers.lstm import LSTMClassifier
+
+# ========== Local Imports ==========
 from data.data_loader import load_and_prepare
-from utils import load_and_prepare_data, train_model, get_config_for_training, get_model_class
+from utils import get_config, get_experiments_dir, get_device, get_loss_function
+from models.common import setup_model
 from logger import logger, configure_logger
+from visualizations import plot_loss_and_accuracy_curves
 
 
 def parse_arguments():
     """
-    Parse command-line arguments.
-
+    Parse command-line arguments for training.
     Returns:
         argparse.Namespace: Parsed arguments.
     """
     parser = argparse.ArgumentParser(description="Train and evaluate a model.")
     parser.add_argument("--dataset", type=str, required=True, help="Dataset to use")
-    parser.add_argument("--model", type=str, required=True, choices=["fcn", "lstm", "mamba"], help="Model type")
+    parser.add_argument("--model", type=str, required=True, choices=["lstm", "mamba"], help="Model type")
     return parser.parse_args()
 
-def get_experiments_dir(dataset, model):
-    """
-    Set up the environment and create a new experiment directory with sequential ordering.
 
+def train_model(model, train_loader, val_loader, criterion, optimizer, device, config, save_dir=None):
+    """
+    Train the model and evaluate on validation set after each epoch.
     Args:
-        dataset (str): Dataset name.
-        model (str): Model name.
-
-    Returns:
-        str: Path to the new experiment directory.
+        model: PyTorch model
+        train_loader: DataLoader for training
+        val_loader: DataLoader for validation
+        criterion: Loss function
+        optimizer: Optimizer
+        device: torch.device
+        config: Configuration dict
     """
-    base_dir = os.path.join(r"./../experiments", dataset, model)
-    os.makedirs(base_dir, exist_ok=True)
+    num_epochs = config.get("epochs", 10)
+    is_multilabel = config.get("is_multilabel", False)
 
-    # Get the highest run number
-    existing_runs = [
-        int(d.split("_")[-1]) for d in os.listdir(base_dir)
-        if os.path.isdir(os.path.join(base_dir, d)) and d.startswith("run_")
-    ]
-    next_run = max(existing_runs, default=0) + 1
+    train_losses = []
+    val_losses = []
+    val_accuracies = []
+    for epoch in range(num_epochs):
+        model.train()
+        train_loss = 0.0
+        for X_batch, y_batch in train_loader:
+            X_batch = X_batch.to(device)
+            y_batch = y_batch.to(device)
+            y_batch = y_batch.float() if is_multilabel else y_batch.long()
+            optimizer.zero_grad()
+            outputs = model(X_batch)
+            loss = criterion(outputs, y_batch)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()
+        model.eval()
+        val_loss = 0.0
+        correct, total = 0, 0
+        with torch.no_grad():
+            for X_batch, y_batch in val_loader:
+                X_batch = X_batch.to(device)
+                y_batch = y_batch.to(device)
+                y_batch = y_batch.float() if is_multilabel else y_batch.long()
+                outputs = model(X_batch)
+                loss = criterion(outputs, y_batch)
+                val_loss += loss.item()
+                if is_multilabel:
+                    probs = torch.sigmoid(outputs)
+                    preds = (probs > 0.5).int()
+                    correct += (preds == y_batch.int()).all(dim=1).sum().item()
+                    total += y_batch.size(0)
+                else:
+                    preds = torch.argmax(outputs, dim=1)
+                    correct += (preds == y_batch).sum().item()
+                    total += y_batch.size(0)
+        avg_train_loss = train_loss / len(train_loader)
+        avg_val_loss = val_loss / len(val_loader)
+        val_acc = 100 * correct / total if total > 0 else 0.0
+        logger.info(f"[Epoch {epoch+1}] Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val Acc: {val_acc:.2f}%")
+        train_losses.append(avg_train_loss)
+        val_losses.append(avg_val_loss)
+        val_accuracies.append(val_acc)
 
-    # Create the new experiment directory
-    experiment_dir = os.path.join(base_dir, f"run_{next_run}")
-    os.makedirs(experiment_dir, exist_ok=True)
-    return experiment_dir
+    # Plot loss and accuracy curves using centralized function
+    # Save plots to experiment directory if available in config
+    plot_loss_and_accuracy_curves(train_losses, val_losses, val_accuracies, save_dir=save_dir)
 
-
-def calculate_class_weights(y_train):
-    n_samples, n_classes = y_train.shape
-    class_counts = np.sum(y_train, axis=0)
-    class_weights = n_samples / (n_classes * (class_counts + 1e-6))  # Avoid divide by zero
-    return torch.FloatTensor(class_weights)
-
-
-def setup_model(model_name, X_train, y_train, device, learning_rate):
-    """
-    Initialize the model, criterion, and optimizer.
-
-    Args:
-        args (argparse.Namespace): Parsed arguments.
-        X_train (np.ndarray): Training data.
-        y_train (np.ndarray): Training labels.
-        device (torch.device): Device to load the model on.
-        learning_rate (float): Learning rate for the optimizer.
-
-    Returns:
-        tuple: Model, criterion, optimizer.
-    """
-    sample_X = X_train[0]
-    time_steps = sample_X.shape[0]
-    input_channels = sample_X.shape[1]
-    logger.info(f"Input shape: {sample_X.shape}, Time steps: {time_steps}, Input channels: {input_channels}")
-    num_classes = len(y_train[0]) if y_train.ndim > 1 else 2
-
-    model_class = get_model_class(model_name)
-    model = model_class(input_channels, time_steps, num_classes).to(device)
-
-    if num_classes > 2:
-        class_weights = calculate_class_weights(y_train).to(device)
-        criterion = nn.BCEWithLogitsLoss(pos_weight=class_weights)
-        logger.info(f"Using BCEWithLogitsLoss with class weights: {class_weights}")
-    else:
-        criterion = nn.CrossEntropyLoss()
-        logger.info("Using CrossEntropyLoss for binary classification.")
-
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-    return model, criterion, optimizer
 
 def train(dataset_name, model_name, save_dir):
-    config = get_config_for_training(dataset=dataset_name, model=model_name)
-
+    """
+    Main training pipeline: loads data, sets up model, trains, and saves model.
+    Args:
+        dataset_name: str
+        model_name: str
+        save_dir: str
+    """
+    config = get_config()
+    device = get_device()
     # Save the config dictionary as a JSON file
     config_path = os.path.join(save_dir, "config.json")
     with open(config_path, "w") as config_file:
         json.dump(config, config_file, indent=4)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    # Extract parameters from config
-    batch_size = config["batch_size"]
-    epochs = config["epochs"]
-    learning_rate = config["learning_rate"]
-
     # Prepare data
-    loaders, datasets, data_arrays, metadata = load_and_prepare(dataset_name, config)
+    loaders, _, data_arrays, _ = load_and_prepare(dataset_name, config)
     train_loader = loaders['train']
     val_loader = loaders['val']
     X_train, y_train = data_arrays['train']
-
     # Model setup
-    model, criterion, optimizer = setup_model(model_name, X_train, y_train, device, learning_rate)
-
+    sample_X = X_train[0]
+    input_channels = sample_X.shape[1]
+    num_classes = len(y_train[0]) if y_train.ndim > 1 else 2
+    model = setup_model(model_name, input_channels, num_classes)
+    criterion = get_loss_function(config, y_train)
+    optimizer = optim.Adam(model.parameters(), lr=config.get("learning_rate", 1e-3))
     # Train the model
     logger.info(f"Starting training for model: {model_name.upper()}")
-    train_model(model, train_loader, val_loader, criterion, optimizer, device, num_epochs=epochs, is_multilabel=config['is_multilabel'])
-
+    plot_dir = os.path.join(save_dir, "plots")
+    train_model(model, train_loader, val_loader, criterion, optimizer, device, config, save_dir=plot_dir)
     # Save the model
     model_path = os.path.join(save_dir, "model.pt")
     torch.save(model.state_dict(), model_path)

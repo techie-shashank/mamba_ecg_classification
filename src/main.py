@@ -1,20 +1,24 @@
-import argparse
+
+# ========== Standard Library Imports ==========
 import os
+import argparse
+
+# ========== Local Imports ==========
 from logger import configure_logger, logger
-from train import train, get_experiments_dir
+from train import train
 from test import test_model
+from utils import get_experiments_dir
 
 
 def parse_arguments():
     """
-    Parse command-line arguments.
-
+    Parse command-line arguments for main pipeline.
     Returns:
         argparse.Namespace: Parsed arguments.
     """
     parser = argparse.ArgumentParser(description="Train and evaluate a model.")
     parser.add_argument("--dataset", type=str, required=True, help="Dataset to use")
-    parser.add_argument("--model", type=str, required=True, choices=["fcn", "lstm", "mamba"], help="Model type")
+    parser.add_argument("--model", type=str, required=True, choices=["lstm", "mamba"], help="Model type")
     return parser.parse_args()
 
 
