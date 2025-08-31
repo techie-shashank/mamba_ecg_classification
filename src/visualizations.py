@@ -1,5 +1,6 @@
 # ========== Standard Library Imports ==========
 import os
+import torch
 
 # ========== Third-Party Imports ==========
 import numpy as np
@@ -8,70 +9,38 @@ import matplotlib.pyplot as plt
 # ========== Local Imports ===============
 from logger import logger
 
-def plot_data_samples(X, y, num_samples=5, channel=0, title_prefix="Sample", save_dir=None):
-    """
-    Plot a few input samples and their labels.
-    Args:
-        X: np.ndarray or torch.Tensor, shape (N, T, C) or (N, C, T)
-        y: np.ndarray or torch.Tensor, shape (N,)
-        num_samples: int, number of samples to plot
-        channel: int, which channel to plot if multichannel
-        title_prefix: str, prefix for plot titles
-    """
-    if hasattr(X, 'cpu'):
-        X = X.cpu().numpy()
-    if hasattr(y, 'cpu'):
-        y = y.cpu().numpy()
-    for i in range(min(num_samples, len(X))):
-        # Determine shape: (T, C) or (C, T)
-        sample = X[i]
-        if sample.shape[0] < sample.shape[-1]:
-            # (T, C)
-            n_channels = sample.shape[1]
-            time = np.arange(sample.shape[0])
-            signals = [sample[:, ch] for ch in range(n_channels)]
-        else:
-            # (C, T)
-            n_channels = sample.shape[0]
-            time = np.arange(sample.shape[1])
-            signals = [sample[ch, :] for ch in range(n_channels)]
-
-        fig, axes = plt.subplots(n_channels, 1, figsize=(8, 2 * n_channels), sharex=True)
-        if n_channels == 1:
-            axes = [axes]
-        for ch in range(n_channels):
-            axes[ch].plot(time, signals[ch])
-            axes[ch].set_ylabel(f"Ch {ch+1}")
-        axes[0].set_title(f"{title_prefix} {i} | Label: {y[i]}")
-        axes[-1].set_xlabel("Time")
-        plt.tight_layout()
-        if save_dir is not None:
-            os.makedirs(save_dir, exist_ok=True)
-            save_path = os.path.join(save_dir, f"{title_prefix.lower().replace(' ', '_')}_{i}.png")
-            plt.savefig(save_path)
-            logger.info(f"Saved data sample plot to {save_path}")
-        else:
-            plt.show()
-            logger.info(f"Displayed data sample plot for {title_prefix} {i} | Label: {y[i]}")
-        plt.close(fig)
 
 # Prediction vs ground truth plotting
-def plot_predictions_vs_ground_truth(X, y_true, y_pred, num_samples=1, channel=0, save_dir=None):
+def plot_predictions_vs_ground_truth(
+        model, X_test, y_test, is_multilabel, class_names, test_annotation_df, num_samples=1,
+        save_dir=None, sampling_rate=1.0
+):
     """
     Plot model predictions vs. ground truth for a few samples.
     """
+    # Visualize predictions vs ground truth for a few samples
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.eval()
+    rng = np.random.default_rng()
+    indices = rng.choice(len(X_test), size=num_samples, replace=False)
+    ecg_ids = test_annotation_df.iloc[indices].index.to_numpy()
+    X = X_test[indices]
+    y_true = y_test[indices]
+    with torch.no_grad():
+        X_tensor = torch.tensor(X, dtype=torch.float32).to(device)
+        outputs = model(X_tensor)
+        if is_multilabel:
+            y_pred = (torch.sigmoid(outputs) > 0.5).int().cpu().numpy()
+        else:
+            y_pred = torch.argmax(outputs, dim=1).cpu().numpy()
+    
     if hasattr(X, 'cpu'):
         X = X.cpu().numpy()
     for i in range(min(num_samples, len(X))):
         sample = X[i]
-        if sample.shape[0] < sample.shape[-1]:
-            n_channels = sample.shape[1]
-            time = np.arange(sample.shape[0])
-            signals = [sample[:, ch] for ch in range(n_channels)]
-        else:
-            n_channels = sample.shape[0]
-            time = np.arange(sample.shape[1])
-            signals = [sample[ch, :] for ch in range(n_channels)]
+        n_channels = sample.shape[1]
+        time = np.arange(sample.shape[0]) / sampling_rate
+        signals = [sample[:, ch] for ch in range(n_channels)]
 
         fig, axes = plt.subplots(n_channels, 1, figsize=(8, 2 * n_channels), sharex=True)
         if n_channels == 1:
@@ -79,8 +48,20 @@ def plot_predictions_vs_ground_truth(X, y_true, y_pred, num_samples=1, channel=0
         for ch in range(n_channels):
             axes[ch].plot(time, signals[ch])
             axes[ch].set_ylabel(f"Ch {ch+1}")
-        axes[0].set_title(f"Sample {i} | True: {y_true[i]}, Pred: {y_pred[i]}")
-        axes[-1].set_xlabel("Time")
+            
+        # Convert label indices to strings if class_names is provided, support multi-label
+        def label_to_str(label):
+            if isinstance(label, (list, np.ndarray)):
+                return ','.join([class_names[idx] if idx < len(class_names) else str(idx) for idx, v in enumerate(label) if v])
+            elif label < len(class_names):
+                return class_names[label]
+            else:
+                return str(label)
+                
+        true_label = label_to_str(y_true[i])
+        pred_label = label_to_str(y_pred[i])
+        axes[0].set_title(f"ECG ID {ecg_ids[i]} | True: {true_label}, Pred: {pred_label}")
+        axes[-1].set_xlabel("Time (s)")
         plt.tight_layout()
         if save_dir is not None:
             os.makedirs(save_dir, exist_ok=True)

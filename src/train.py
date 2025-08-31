@@ -108,7 +108,7 @@ def train(dataset_name, model_name, save_dir):
         json.dump(config, config_file, indent=4)
 
     # Prepare data
-    loaders, _, data_arrays, _ = load_and_prepare(dataset_name, config)
+    loaders, _, data_arrays, _, annotation_dfs = load_and_prepare(dataset_name, config)
     train_loader = loaders['train']
     val_loader = loaders['val']
     X_train, y_train = data_arrays['train']

@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 import wfdb
 import torch
+from numpy import ndarray
 from torch.utils.data import Dataset, DataLoader
 from sklearn.preprocessing import MultiLabelBinarizer, StandardScaler
 from sklearn.model_selection import train_test_split
@@ -167,7 +168,7 @@ def load_annotations(data_dir: str, limit: int = None) -> pd.DataFrame:
             return []
     df.scp_codes = df.scp_codes.apply(safe_eval)
     if limit:
-        df = df[:limit]
+        df = df.sample(n=limit)
     return df
 
 
@@ -248,15 +249,19 @@ def load_data(data_dir: str, sampling_rate: int, limit: int = None) -> tuple[np.
 def split_train_test(
     X: np.ndarray, Y: pd.DataFrame, y: np.ndarray, test_fold: int = 10, val_ratio: float = 0.5
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    X_train = X[np.where(Y.strat_fold != test_fold)]
-    y_train = y[(Y.strat_fold != test_fold)]
-    X_test = X[np.where(Y.strat_fold == test_fold)]
-    y_test = y[Y.strat_fold == test_fold]
-    X_val, X_test, y_val, y_test = train_test_split(
-        X_test, y_test, test_size=1 - val_ratio, random_state=42
+    train_mask = (Y.strat_fold != test_fold)
+    test_mask = (Y.strat_fold == test_fold)
+    X_train = X[np.where(train_mask)]
+    Y_train = Y[train_mask]
+    y_train = y[np.where(train_mask)]
+    X_test = X[np.where(test_mask)]
+    Y_test = Y[test_mask]
+    y_test = y[np.where(test_mask)]
+    X_val, X_test, Y_val, Y_test, y_val, y_test = train_test_split(
+        X_test, Y_test, y_test, test_size=1 - val_ratio, random_state=42
     )
-    # logging.info(f"Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
-    return X_train, y_train, X_val, y_val, X_test, y_test
+    logging.info(f"Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
+    return X_train, Y_train, y_train, X_val, Y_val, y_val, X_test, Y_test, y_test
 
 # ===================== Visualization =====================
 def visualize_raw_data_distribution(data_tuple: tuple[np.ndarray, pd.DataFrame]) -> None:
@@ -297,7 +302,7 @@ def load_and_prepare_ptbxl(config: dict) -> tuple[dict, dict, dict, dict]:
     )
     # visualize_raw_data_distribution((signals, annotation_df))  # Uncomment to visualize
     X, Y, y, classes = preprocess_labels(signals, annotation_df, config)
-    X_train, y_train, X_val, y_val, X_test, y_test = split_train_test(X, Y, y)
+    X_train, Y_train, y_train, X_val, Y_val, y_val, X_test, Y_test, y_test = split_train_test(X, Y, y)
     X_train, X_val, X_test = preprocess_signals(X_train, X_val, X_test)
     train_dataset = PTBXL(X_train, y_train)
     val_dataset = PTBXL(X_val, y_val)
@@ -308,5 +313,6 @@ def load_and_prepare_ptbxl(config: dict) -> tuple[dict, dict, dict, dict]:
     data_loaders = {"train": train_loader, "val": val_loader, "test": test_loader}
     datasets = {"train": train_dataset, "val": val_dataset, "test": test_dataset}
     data_arrays = {"train": (X_train, y_train), "val": (X_val, y_val), "test": (X_test, y_test)}
+    annotation_dfs = {"train": Y_train, "val": Y_val, "test": Y_test}
     metadata = {"classes": classes}
-    return data_loaders, datasets, data_arrays, metadata
+    return data_loaders, datasets, data_arrays, metadata, annotation_dfs

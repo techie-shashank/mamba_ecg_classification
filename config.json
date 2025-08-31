@@ -1,8 +1,8 @@
 {
     "batch_size": 64,
-    "epochs": 50,
+    "epochs": 10,
     "learning_rate": 0.001,
-    "is_multilabel": false,
+    "is_multilabel": true,
     "data_dir": "./../data/raw/physionet.org/files/ptb-xl/1.0.3/",
     "sampling_rate": 100,
     "limit": 100

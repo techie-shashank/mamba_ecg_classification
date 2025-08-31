@@ -72,21 +72,18 @@ def evaluate_model(
     with torch.no_grad():
         for batch in test_loader:
             inputs, labels = batch[0].to(device), batch[1].to(device)
-            # Ensure labels are the correct type for the loss function
-            if is_multilabel:
-                labels_for_loss = labels.float()
-            else:
-                labels_for_loss = labels.long()
             outputs = model(inputs)
             if is_multilabel:
+                labels_for_loss = labels.float()
                 probs = torch.sigmoid(outputs).cpu().numpy()
                 preds = (probs > 0.5).astype(int)
                 correct += (preds == labels.cpu().numpy().astype(int)).all(axis=1).sum()
             else:
+                labels_for_loss = labels.long()
                 probs = torch.softmax(outputs, dim=1).cpu().numpy()
                 preds = np.argmax(probs, axis=1)
                 correct += (preds == labels.cpu().numpy()).sum()
-                labels = labels.cpu().numpy()
+            labels = labels.cpu().numpy()
             loss = criterion(outputs, labels_for_loss)
             test_loss += loss.item()
             all_probs.append(probs)
@@ -152,24 +149,25 @@ def calculate_store_metrics(
             class_names=class_names
         )
     
-    # Save confusion matrix plot
-    cm = confusion_matrix(y_true, y_pred)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
-    fig, ax = plt.subplots(figsize=(6, 6))
-    disp.plot(ax=ax, cmap='Blues', colorbar=False)
-    plt.title('Confusion Matrix')
-    plt.tight_layout()
-    cm_path = os.path.join(save_dir, 'confusion_matrix.png')
-    plt.savefig(cm_path)
-    plt.close(fig)
-    logger.info(f"Confusion matrix plot saved at {cm_path}")
+        # Save confusion matrix plot
+        cm = confusion_matrix(y_true, y_pred)
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+        fig, ax = plt.subplots(figsize=(6, 6))
+        disp.plot(ax=ax, cmap='Blues', colorbar=False)
+        plt.title('Confusion Matrix')
+        plt.tight_layout()
+        cm_path = os.path.join(save_dir, 'confusion_matrix.png')
+        plt.savefig(cm_path)
+        plt.close(fig)
+        logger.info(f"Confusion matrix plot saved at {cm_path}")
 
-    logger.info("\n[Binary Classification Results]")
-    logger.info(f"Accuracy      : {metrics['binary_accuracy']:.4f}")
-    logger.info(f"Precision     : {metrics['binary_precision']:.4f}")
-    logger.info(f"Recall        : {metrics['binary_recall']:.4f}")
-    logger.info(f"F1 Score      : {metrics['binary_f1']:.4f}")
-    logger.info(f"ROC AUC       : {metrics['binary_auc']:.4f}")
+        logger.info("\n[Binary Classification Results]")
+        logger.info(f"Accuracy      : {metrics['binary_accuracy']:.4f}")
+        logger.info(f"Precision     : {metrics['binary_precision']:.4f}")
+        logger.info(f"Recall        : {metrics['binary_recall']:.4f}")
+        logger.info(f"F1 Score      : {metrics['binary_f1']:.4f}")
+        logger.info(f"ROC AUC       : {metrics['binary_auc']:.4f}")
+
     with open(os.path.join(save_dir, 'metrics.json'), 'w') as f:
         json.dump(metrics, f, indent=4)
     logger.info(f"[Evaluation] Metrics saved at {save_dir}")
