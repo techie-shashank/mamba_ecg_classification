@@ -3,7 +3,7 @@ import torch.nn as nn
 
 class LSTMClassifier(nn.Module):
 
-    def __init__(self, input_channels, num_classes, hidden_size=64, num_layers=1):
+    def __init__(self, input_channels, num_classes, hidden_size=64, num_layers=1, fc_hidden_size=128, dropout=0.3):
         super(LSTMClassifier, self).__init__()
 
         self.lstm = nn.LSTM(input_size=input_channels,
@@ -12,10 +12,10 @@ class LSTMClassifier(nn.Module):
                             batch_first=True)
 
         self.fc = nn.Sequential(
-            nn.Linear(hidden_size, 128),
+            nn.Linear(hidden_size, fc_hidden_size),
             nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(128, num_classes)
+            nn.Dropout(dropout),
+            nn.Linear(fc_hidden_size, num_classes)
         )
 
     def forward(self, x):

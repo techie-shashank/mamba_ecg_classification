@@ -1,4 +1,3 @@
-
 # ========== Standard Library Imports ==========
 import os
 import json
@@ -11,12 +10,48 @@ import torch.nn as nn
 # ========== Local Imports ==========
 from logger import logger
 
+# Global device cache to avoid repeated detection
+_device_cache = None
+_device_info_logged = False
+
 
 def get_device():
     """
-    Returns the device to be used for training (GPU or CPU).
+    Returns the device to be used for training (GPU or CPU) with detailed logging.
+    Uses caching to avoid repeated GPU detection and logging.
     """
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    global _device_cache, _device_info_logged
+
+    # Return cached device if already detected
+    if _device_cache is not None:
+        return _device_cache
+
+    if torch.cuda.is_available():
+        _device_cache = torch.device("cuda")
+
+        # Only log detailed GPU info once
+        if not _device_info_logged:
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1024**3  # GB
+            logger.info(f"GPU detected: {gpu_name} ({gpu_memory:.2f} GB) - CUDA {torch.version.cuda}")
+            _device_info_logged = True
+
+        return _device_cache
+    else:
+        if not _device_info_logged:
+            logger.warning("CUDA not available. Using CPU for training")
+            _device_info_logged = True
+        _device_cache = torch.device("cpu")
+        return _device_cache
+
+
+def clear_gpu_cache():
+    """
+    Clear GPU cache to free up memory.
+    """
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        logger.debug("GPU cache cleared")
 
 
 def calculate_class_weights(y_train):
@@ -28,8 +63,9 @@ def calculate_class_weights(y_train):
         torch.FloatTensor: Class weights tensor
     """
     n_samples, n_classes = y_train.shape
-    class_counts = np.sum(y_train, axis=0)
-    class_weights = n_samples / (n_classes * (class_counts + 1e-6))  # Avoid divide by zero
+    positives = np.sum(y_train, axis=0)
+    negatives = n_samples - positives
+    class_weights = negatives / (positives + 1e-6)
     return torch.FloatTensor(class_weights)
 
 
@@ -52,12 +88,10 @@ def get_loss_function(config, y_train=None):
                 logger.info(f"Using BCEWithLogitsLoss with class weights: {class_weights}")
         else:
             criterion = nn.BCEWithLogitsLoss()
-            if logger:
-                logger.info("Using BCEWithLogitsLoss (no class weights)")
+            logger.info("Using BCEWithLogitsLoss (no class weights)")
     else:
         criterion = nn.CrossEntropyLoss()
-        if logger:
-            logger.info("Using CrossEntropyLoss for binary classification.")
+        logger.info("Using CrossEntropyLoss for binary classification")
     return criterion
 
 
@@ -70,7 +104,7 @@ def get_config(config_base_path=None):
         dict: Configuration dictionary.
     """
     if not config_base_path:
-        config_base_path = os.path.join(os.path.dirname(__file__), "..")
+        config_base_path = os.path.join(os.path.dirname(__file__), "../configs")
 
     config_path = os.path.abspath(os.path.join(config_base_path, "config.json"))
 
@@ -88,7 +122,7 @@ def get_experiments_dir(dataset, model):
     Returns:
         str: Path to the new experiment directory.
     """
-    base_dir = os.path.join(r"./../experiments", dataset, model)
+    base_dir = os.path.join(r"./experiments", dataset, model)
     os.makedirs(base_dir, exist_ok=True)
     # Get the highest run number
     existing_runs = [

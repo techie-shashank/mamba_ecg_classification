@@ -18,8 +18,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description="Train and evaluate a model.")
     parser.add_argument("--dataset", type=str, required=True, help="Dataset to use")
-    parser.add_argument("--model", type=str, required=True, choices=["lstm", "mamba"], help="Model type")
-    parser.add_argument("--num_samples", type=int, default=0, help="Number of random test samples to visualize predictions for (default: 0, skip)")
+    parser.add_argument("--model", type=str, required=True, choices=["lstm", "mamba", "hybrid_serial"], help="Model type")
     return parser.parse_args()
 
 
@@ -38,4 +37,4 @@ if __name__ == "__main__":
 
     # Test the model
     logger.info(f"Starting evaluation for dataset: {dataset_name}, model: {model_name}")
-    test_model(dataset_name, model_name, experiments_dir, num_samples=args.num_samples)
+    test_model(dataset_name, model_name, experiments_dir)

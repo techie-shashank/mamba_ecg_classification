@@ -1,0 +1,104 @@
+{
+    // See https://go.microsoft.com/fwlink/?linkid=830387 for more about launch.json
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Train and Test Model",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/main.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--dataset", "ptbxl",
+                "--model", "lstm"
+            ]
+        },
+        {
+            "name": "Train Model",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/train.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--dataset", "ptbxl",
+                "--model", "lstm"
+            ]
+        },
+        {
+            "name": "Test Model",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/test.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--dataset", "ptbxl",
+                "--model", "lstm",
+                "--run_number", "1"
+            ]
+        },
+        {
+            "name": "Run Experiments and Parse Data",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/quick_start.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Parse Data",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/experiment_data_parser.py",
+            "args": [
+                "--experiments-dir", "./experiments",
+                "--db-path", "./outputs/experiments.db",
+                "--csv-path", "./outputs/experiments_data.csv"
+            ],
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Show Dashboard",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "streamlit",
+            "args": [
+                "run",
+                "${workspaceFolder}/scripts/experiment_dashboard.py"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Interpret Single ECG",
+            "type": "debugpy", 
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/interpretability_analysis.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--model", "lstm",
+                "--dataset", "ptbxl", 
+                "--run_number", "1",
+                "--ecg_id", "1"
+            ]
+        },
+        {
+            "name": "Interpret Multiple ECG",
+            "type": "debugpy",
+            "request": "launch", 
+            "program": "${workspaceFolder}/scripts/interpretability_analysis.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "--model", "lstm",
+                "--dataset", "ptbxl",
+                "--run_number", "1", 
+                "--ecg_id", "1", "2", "5"
+            ]
+        }
+        
+    ]
+}

@@ -1,7 +1,66 @@
+# Data and Datasets
 /data/
 experiments/
-.idea/
-__pycache__/
-logfile.log
-saved_model/
 remote_runs/
+
+# Outputs and Generated Files
+outputs/
+*.log
+logfile.log
+experiments_data.csv
+experiments.db
+comprehensive_search.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+.venv
+
+# IDE
+.idea/
+.vscode/settings.json
+.vscode/tasks.json
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Model Checkpoints and Saved Models
+saved_model/
+*.pth
+*.pt
+*.ckpt
+
+# Temporary Files
+temp/
+tmp/
+*.tmp
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

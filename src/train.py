@@ -108,7 +108,7 @@ def train(dataset_name, model_name, save_dir):
         json.dump(config, config_file, indent=4)
 
     # Prepare data
-    loaders, _, data_arrays, _, annotation_dfs = load_and_prepare(dataset_name, config)
+    loaders, _, data_arrays, _, _ = load_and_prepare(dataset_name, config)
     train_loader = loaders['train']
     val_loader = loaders['val']
     X_train, y_train = data_arrays['train']
@@ -116,7 +116,7 @@ def train(dataset_name, model_name, save_dir):
     sample_X = X_train[0]
     input_channels = sample_X.shape[1]
     num_classes = len(y_train[0]) if y_train.ndim > 1 else 2
-    model = setup_model(model_name, input_channels, num_classes)
+    model = setup_model(model_name, input_channels, num_classes, config)
     criterion = get_loss_function(config, y_train)
     optimizer = optim.Adam(model.parameters(), lr=config.get("learning_rate", 1e-3))
     # Train the model

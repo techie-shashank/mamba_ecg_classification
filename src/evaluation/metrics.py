@@ -28,7 +28,14 @@ def calculate_binary_classification_metrics(y_true_binary, y_pred_binary, y_prob
         "binary_precision": precision_score(y_true_binary, y_pred_binary, zero_division=0),
         "binary_recall": recall_score(y_true_binary, y_pred_binary, zero_division=0),
         "binary_auc": auc,
-        "classification_report": classification_report(y_true_binary, y_pred_binary, target_names=class_names, zero_division=0, output_dict=True)
+        "classification_report": classification_report(
+            y_true_binary, 
+            y_pred_binary, 
+            target_names=class_names, 
+            labels=list(range(len(class_names))),  # Specify expected labels
+            zero_division=0, 
+            output_dict=True
+        )
     }
     return metrics
 
@@ -54,7 +61,14 @@ def calculate_multilabel_metrics(y_true_multi, y_pred_multi, y_prob_multi, class
         "macro_roc_auc": macro_roc_auc,
         "hamming_loss": hamming_loss(y_true_multi, y_pred_multi),
         "subset_accuracy": accuracy_score(y_true_multi, y_pred_multi),
-        "classification_report": classification_report(y_true_multi, y_pred_multi, target_names=class_names, output_dict=True, zero_division=0),
+        "classification_report": classification_report(
+            y_true_multi, 
+            y_pred_multi, 
+            target_names=class_names, 
+            labels=list(range(len(class_names))),  # Specify expected labels
+            output_dict=True, 
+            zero_division=0
+        ),
         "multilabel_confusion_matrix": multilabel_confusion_matrix(y_true_multi, y_pred_multi).tolist()
     }
     return metrics
