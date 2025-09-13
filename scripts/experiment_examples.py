@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 from scripts.experiment_runner import ExperimentRunner
 from src.logger import get_experiment_logger
+from dotenv import load_dotenv
 
 # Setup logging
 logger = get_experiment_logger('experiment_examples')
 
 COMPREHENSIVE_SEARCH = {
     "datasets": ["ptbxl"],
-    "models": ["lstm", "mamba", "hybrid_serial"],
+    "models": ["lstm"],
     "hyperparameter_grids": {
         "lstm": {
             "hidden_size": [256],
@@ -28,9 +29,11 @@ COMPREHENSIVE_SEARCH = {
     },
     "global_param_grid": {
         "batch_size": [64],
-        "learning_rate": [0.0001],
-        "epochs": [10],
-        "is_multilabel": [True, False],
+        "learning_rate": [0.0005],
+        "epochs": [100],
+        "is_multilabel": [True],
+        "sampling_rate": [100],
+        "use_focal_loss": [True]
     }
 }
 
@@ -45,5 +48,6 @@ def run_comprehensive_search():
     return runner
 
 if __name__ == "__main__":
+    load_dotenv()
     runner = run_comprehensive_search()
     runner.run_all_experiments()

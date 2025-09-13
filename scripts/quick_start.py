@@ -8,6 +8,7 @@ import os
 import subprocess
 from datetime import datetime
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Setup paths for imports
 project_root = Path(__file__).parent.parent
@@ -123,4 +124,5 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()

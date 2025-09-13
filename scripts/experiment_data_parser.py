@@ -13,6 +13,7 @@ import re
 from pathlib import Path
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+from dotenv import load_dotenv
 
 # Setup paths for imports  
 project_root = Path(__file__).parent.parent
@@ -594,4 +595,5 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()

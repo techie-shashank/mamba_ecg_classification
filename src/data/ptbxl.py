@@ -26,6 +26,10 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.manifold import TSNE
+from tqdm import tqdm
+
+# ========== Local Imports ==========
+from logger import logger  # Import the configured logger
 
 # ===================== Dataset Class =====================
 
@@ -65,7 +69,7 @@ def filter_non_empty_labels(X: np.ndarray, Y: pd.DataFrame, label_col: str = 'di
     """
     non_empty_mask = Y[label_col].apply(lambda x: isinstance(x, (list, tuple)) and len(x) > 0)
     indexes_removed = Y.index[~non_empty_mask].tolist()
-    logging.info(f"Removed Indexes (empty labels): {indexes_removed}")
+    logger.info(f"Removed Indexes (empty labels): {indexes_removed}")
     Y_filtered = Y[non_empty_mask]
     X_filtered = X[non_empty_mask.values]
     return X_filtered, Y_filtered
@@ -90,7 +94,7 @@ def preprocess_labels_binary(Y: pd.DataFrame) -> tuple[np.ndarray, list[str]]:
             try:
                 labels = ast.literal_eval(labels)
             except Exception as e:
-                logging.warning(f"Could not parse label: {labels} ({e})")
+                logger.warning(f"Could not parse label: {labels} ({e})")
                 labels = []
         if len(labels) == 1 and 'NORM' in labels:
             binary_labels.append(0)
@@ -104,7 +108,7 @@ def preprocess_labels(X: np.ndarray, Y: pd.DataFrame, config: dict) -> tuple[np.
     Returns filtered X, Y, processed y, and class names.
     """
     X, Y = filter_non_empty_labels(X, Y, 'diagnostic_superclass')
-    logging.info("Empty labels removed - X shape: %s, Y shape: %s", X.shape, Y.shape)
+    logger.info("Empty labels removed - X shape: %s, Y shape: %s", X.shape, Y.shape)
     is_multilabel = config.get("is_multilabel", False)
     if is_multilabel:
         y, mlb = preprocess_label_multilabel(Y)
@@ -124,10 +128,20 @@ def apply_standardizer(X: np.ndarray, ss: StandardScaler) -> np.ndarray:
         Standardized ECG signals with the same shape as input.
     """
     X_tmp = []
-    for x in X:
+    total_signals = len(X)
+    logger.info(f"Starting standardization of {total_signals} signals...")
+    
+    # Use tqdm for preprocessing progress with logging
+    for i, x in enumerate(tqdm(X, desc="Standardizing signals", unit="signals", ncols=80)):
         x_shape = x.shape
         X_tmp.append(ss.transform(x.flatten()[:,np.newaxis]).reshape(x_shape))
+        
+        # Log progress at milestones
+        if (i + 1) % 250 == 0 or (i + 1) in [100, 500, 1000]:  # Lowered thresholds for testing
+            logger.info(f"Standardized {i + 1}/{total_signals} signals ({((i + 1)/total_signals)*100:.1f}%)")
+    
     X_tmp = np.array(X_tmp)
+    logger.info(f"Standardization complete for {len(X_tmp)} signals")
     return X_tmp
 
 def preprocess_signals(X_train: np.ndarray, X_validation: np.ndarray, X_test: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -158,13 +172,13 @@ def load_annotations(data_dir: str, limit: int = None) -> pd.DataFrame:
     try:
         df = pd.read_csv(os.path.join(data_dir, 'ptbxl_database.csv'), index_col='ecg_id')
     except Exception as e:
-        logging.error(f"Failed to load ptbxl_database.csv: {e}")
+        logger.error(f"Failed to load ptbxl_database.csv: {e}")
         raise
     def safe_eval(x):
         try:
             return ast.literal_eval(x)
         except Exception as e:
-            logging.warning(f"Could not parse scp_codes: {x} ({e})")
+            logger.warning(f"Could not parse scp_codes: {x} ({e})")
             return []
     df.scp_codes = df.scp_codes.apply(safe_eval)
     if limit:
@@ -184,12 +198,49 @@ def load_signals(data_dir: str, sampling_rate: int, annotation_df: pd.DataFrame)
     """
     file_column = 'filename_lr' if sampling_rate == 100 else 'filename_hr'
     signals = []
-    for f in annotation_df[file_column]:
+    total_files = len(annotation_df)
+    
+    logger.info(f"Loading {total_files} ECG signals at {sampling_rate}Hz...")
+    
+    # Use tqdm for progress bar with logging-friendly output
+    pbar = tqdm(
+        enumerate(annotation_df[file_column]), 
+        total=total_files,
+        desc=f"Loading ECG signals ({sampling_rate}Hz)",
+        unit="files",
+        ncols=100,
+        disable=False  # Always show progress bar
+    )
+    
+    failed_files = 0
+    
+    for i, f in pbar:
         try:
             signal, _ = wfdb.rdsamp(os.path.join(data_dir, f))
             signals.append(signal)
+            
+            # Update progress bar postfix with stats
+            pbar.set_postfix({
+                'loaded': len(signals),
+                'failed': failed_files,
+                'rate': f"{sampling_rate}Hz"
+            })
+            
+            # Log milestone progress to file as well
+            if (i + 1) % 250 == 0 or (i + 1) in [100, 500, 1000]:  # Lowered thresholds for testing
+                logger.info(f"Loaded {i + 1}/{total_files} signals ({((i + 1)/total_files)*100:.1f}%) - {len(signals)} successful, {failed_files} failed")
+                
         except Exception as e:
-            logging.warning(f"Could not load file {f}: {e}")
+            failed_files += 1
+            logger.warning(f"Could not load file {f}: {e}")
+            pbar.set_postfix({
+                'loaded': len(signals),
+                'failed': failed_files,
+                'rate': f"{sampling_rate}Hz"
+            })
+    
+    pbar.close()
+    logger.info(f"Successfully loaded {len(signals)} signals, {failed_files} files failed")
     return np.array(signals)
 
 
@@ -204,7 +255,7 @@ def load_aggregation_map(data_dir: str) -> pd.DataFrame:
     try:
         agg_df = pd.read_csv(os.path.join(data_dir, 'scp_statements.csv'), index_col=0)
     except Exception as e:
-        logging.error(f"Failed to load scp_statements.csv: {e}")
+        logger.error(f"Failed to load scp_statements.csv: {e}")
         raise
     return agg_df[agg_df.diagnostic == 1.0]
 
@@ -239,10 +290,18 @@ def load_data(data_dir: str, sampling_rate: int, limit: int = None) -> tuple[np.
     Returns:
         Tuple of (signals array, annotation DataFrame with diagnostic_superclass column).
     """
+    logger.info(f"Starting PTB-XL data loading with sampling_rate={sampling_rate}, limit={limit}")
+    
     annotation_df = load_annotations(data_dir, limit=limit)
+    logger.info(f"Loaded annotations for {len(annotation_df)} records")
+    
     signals = load_signals(data_dir, sampling_rate, annotation_df)
+    logger.info(f"Loaded signal data with shape: {signals.shape}")
+    
     agg_map = load_aggregation_map(data_dir)
     annotation_df['diagnostic_superclass'] = aggregate_superclasses(annotation_df, agg_map)
+    logger.info("Completed diagnostic superclass aggregation")
+    
     return signals, annotation_df
 
 # ===================== Data Splitting =====================
@@ -260,7 +319,7 @@ def split_train_test(
     X_val, X_test, Y_val, Y_test, y_val, y_test = train_test_split(
         X_test, Y_test, y_test, test_size=1 - val_ratio, random_state=42
     )
-    logging.info(f"Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
+    logger.info(f"Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
     return X_train, Y_train, y_train, X_val, Y_val, y_val, X_test, Y_test, y_test
 
 # ===================== Visualization =====================
@@ -274,7 +333,7 @@ def visualize_raw_data_distribution(data_tuple: tuple[np.ndarray, pd.DataFrame])
     X, Y = data_tuple
     all_labels = [label for sublist in Y['diagnostic_superclass'] for label in sublist]
     label_counts = Counter(all_labels)
-    logging.info(f"Label distribution: {label_counts}")
+    logger.info(f"Label distribution: {label_counts}")
     plt.figure(figsize=(10, 6))
     sns.barplot(x=list(label_counts.keys()), y=list(label_counts.values()), palette='viridis')
     plt.title('PTB-XL Diagnostic Superclass Distribution')
@@ -295,24 +354,55 @@ def load_and_prepare_ptbxl(config: dict) -> tuple[dict, dict, dict, dict]:
     Returns:
         tuple: (data_loaders, datasets, data_arrays, metadata)
     """
+    logger.info("=== Starting PTB-XL dataset preparation ===")
+    
+    # Step 1: Load raw data
+    logger.info("📊 Step 1/5: Loading raw ECG data...")
+    print("📊 Step 1/5: Loading raw ECG data...")
     signals, annotation_df = load_data(
-        data_dir=config["data_dir"],
+        data_dir=os.environ["DATA_DIR"],
         sampling_rate=config["sampling_rate"],
         limit=config.get("limit")
     )
+    logger.info(f"Step 1 complete: Loaded {signals.shape[0]} ECG signals with shape {signals.shape}")
     # visualize_raw_data_distribution((signals, annotation_df))  # Uncomment to visualize
+    
+    # Step 2: Preprocess labels
+    logger.info("🏷️  Step 2/5: Preprocessing labels...")
+    print("🏷️  Step 2/5: Preprocessing labels...")
     X, Y, y, classes = preprocess_labels(signals, annotation_df, config)
+    logger.info(f"Step 2 complete: Processed labels - X: {X.shape}, y: {y.shape}, classes: {len(classes)}")
+    
+    # Step 3: Split data
+    logger.info("✂️  Step 3/5: Splitting data into train/val/test sets...")
+    print("✂️  Step 3/5: Splitting data into train/val/test sets...")
     X_train, Y_train, y_train, X_val, Y_val, y_val, X_test, Y_test, y_test = split_train_test(X, Y, y)
+    logger.info(f"Step 3 complete: Split data - Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
+    
+    # Step 4: Preprocess signals
+    logger.info("🔧 Step 4/5: Preprocessing and normalizing signals...")
+    print("🔧 Step 4/5: Preprocessing and normalizing signals...")
     X_train, X_val, X_test = preprocess_signals(X_train, X_val, X_test)
+    logger.info(f"Step 4 complete: Normalized signals - Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
+    
+    # Step 5: Create datasets and loaders
+    logger.info("⚙️  Step 5/5: Creating PyTorch datasets and data loaders...")
+    print("⚙️  Step 5/5: Creating PyTorch datasets and data loaders...")
     train_dataset = PTBXL(X_train, y_train)
     val_dataset = PTBXL(X_val, y_val)
     test_dataset = PTBXL(X_test, y_test)
     train_loader = DataLoader(train_dataset, batch_size=config["batch_size"], shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=config["batch_size"], shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=config["batch_size"], shuffle=False)
+    
     data_loaders = {"train": train_loader, "val": val_loader, "test": test_loader}
     datasets = {"train": train_dataset, "val": val_dataset, "test": test_dataset}
     data_arrays = {"train": (X_train, y_train), "val": (X_val, y_val), "test": (X_test, y_test)}
     annotation_dfs = {"train": Y_train, "val": Y_val, "test": Y_test}
     metadata = {"classes": classes}
+    
+    logger.info("✅ Step 5 complete: Created datasets and data loaders")
+    print("✅ Dataset preparation complete!")
+    logger.info(f"=== Dataset preparation complete - Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape} ===")
+    
     return data_loaders, datasets, data_arrays, metadata, annotation_dfs

@@ -16,6 +16,7 @@ import numpy as np
 from PIL import Image
 import base64
 import io
+from dotenv import load_dotenv
 
 # Page configuration
 st.set_page_config(
@@ -813,4 +814,5 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()

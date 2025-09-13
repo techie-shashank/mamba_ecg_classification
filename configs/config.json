@@ -1,11 +1,10 @@
 {
   "batch_size": 64,
-  "epochs": 10,
-  "learning_rate": 0.0001,
-  "is_multilabel": false,
-  "data_dir": "/home/shashank/time_series/mamba_ts_forecasting/data/raw/physionet.org/files/ptb-xl/1.0.3/",
-  "sampling_rate": 100,
-  "limit": 1000,
+  "epochs": 100,
+  "learning_rate": 0.0005,
+  "is_multilabel": true,
+  "use_focal_loss": true,
+  "sampling_rate": 500,
   "model_hyperparameters": {
     "lstm": {
       "hidden_size": 256,
@@ -32,5 +31,5 @@
     }
   },
   "dataset": "ptbxl",
-  "model": "hybrid_serial"
+  "model": "lstm"
 }

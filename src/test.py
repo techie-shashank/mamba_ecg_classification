@@ -2,6 +2,7 @@
 import os
 import argparse
 import torch
+from dotenv import load_dotenv
 
 # ========== Local Imports ==========
 import utils
@@ -57,6 +58,7 @@ def test_model(dataset_name, model_name, base_dir):
     )
 
 if __name__ == "__main__":
+    load_dotenv()
     args = parse_arguments()
     run_number = args.run_number 
     base_dir = os.path.join(

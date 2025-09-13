@@ -1,13 +1,21 @@
 
 # ========== Standard Library Imports ==========
 import os
+import sys
 import argparse
+from pathlib import Path
+
+# Add src directory to path if not already there
+current_dir = Path(__file__).parent
+if str(current_dir) not in sys.path:
+    sys.path.insert(0, str(current_dir))
 
 # ========== Local Imports ==========
 from logger import configure_logger, logger
 from train import train
 from test import test_model
 from utils import get_experiments_dir
+from dotenv import load_dotenv
 
 
 def parse_arguments():
@@ -23,6 +31,7 @@ def parse_arguments():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     args = parse_arguments()
     dataset_name = args.dataset
     model_name = args.model

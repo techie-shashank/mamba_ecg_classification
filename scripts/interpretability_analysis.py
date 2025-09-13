@@ -17,6 +17,7 @@ import os
 import sys
 import argparse
 import torch
+from dotenv import load_dotenv
 
 # ========== Local Imports ==========
 # Setup paths for imports  
@@ -135,7 +136,7 @@ def load_model_and_data(args, base_dir, config):
     logger.info(f"Loading annotations to find ECG IDs: {ecg_ids}")
     
     try:
-        df = pd.read_csv(os.path.join(config["data_dir"], 'ptbxl_database.csv'), index_col='ecg_id')
+        df = pd.read_csv(os.path.join(os.environ["DATA_DIR"], 'ptbxl_database.csv'), index_col='ecg_id')
     except Exception as e:
         raise FileNotFoundError(f"Failed to load ptbxl_database.csv: {e}")
     
@@ -157,7 +158,7 @@ def load_model_and_data(args, base_dir, config):
     df.scp_codes = df.scp_codes.apply(safe_eval)
     
     # Load aggregation map and add diagnostic superclass
-    agg_map = load_aggregation_map(config["data_dir"])
+    agg_map = load_aggregation_map(os.environ["DATA_DIR"])
     df['diagnostic_superclass'] = aggregate_superclasses(df, agg_map)
     
     # Get classes from a sample to determine all possible classes for the model
@@ -185,7 +186,7 @@ def load_model_and_data(args, base_dir, config):
         
         logger.info(f"Loading ECG signal from {file_path}")
         try:
-            signal, _ = wfdb.rdsamp(os.path.join(config["data_dir"], file_path))
+            signal, _ = wfdb.rdsamp(os.path.join(os.environ["DATA_DIR"], file_path))
             # Store without batch dimension for individual processing
             ecg_samples_dict[ecg_id] = signal
             ecg_records_dict[ecg_id] = ecg_record
@@ -427,4 +428,5 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()

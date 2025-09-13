@@ -79,9 +79,16 @@ def get_loss_function(config, y_train=None):
         nn.Module: Loss function.
     """
     is_multilabel = config.get('is_multilabel', False)
+    use_focal_loss = config.get('use_focal_loss', False)
     device = get_device()
+    
     if is_multilabel:
-        if y_train is not None:
+        if use_focal_loss:
+            # Import here to avoid circular imports
+            from training_utils import FocalLoss
+            criterion = FocalLoss(alpha=1, gamma=2)
+            logger.info("Using Focal Loss for better class imbalance handling")
+        elif y_train is not None:
             class_weights = calculate_class_weights(y_train).to(device)
             criterion = nn.BCEWithLogitsLoss(pos_weight=class_weights)
             if logger:

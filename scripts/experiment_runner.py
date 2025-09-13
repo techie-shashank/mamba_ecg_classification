@@ -15,6 +15,7 @@ import copy
 from pathlib import Path
 from typing import Dict, List, Any
 from logger import get_experiment_logger
+from dotenv import load_dotenv
 
 # Setup logging with file output
 logger = get_experiment_logger('experiment_runner')
@@ -423,4 +424,5 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()
