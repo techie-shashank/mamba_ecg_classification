@@ -34,8 +34,7 @@ def get_scheduler(optimizer, scheduler_type="reduce_lr", **kwargs):
             mode='min', 
             factor=kwargs.get('factor', 0.5), 
             patience=kwargs.get('patience', 5),
-            min_lr=kwargs.get('min_lr', 1e-6),
-            verbose=True
+            min_lr=kwargs.get('min_lr', 1e-6)
         )
     elif scheduler_type == "step":
         return StepLR(

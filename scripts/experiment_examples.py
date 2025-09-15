@@ -8,31 +8,33 @@ logger = get_experiment_logger('experiment_examples')
 
 COMPREHENSIVE_SEARCH = {
     "datasets": ["ptbxl"],
-    "models": ["lstm"],
+    "models": ["lstm", "mamba", "hybrid_serial"],
     "hyperparameter_grids": {
         "lstm": {
-            "hidden_size": [256],
-            "num_layers": [3],
-            "dropout": [0.5]
+            "hidden_size": [128, 256],
+            "num_layers": [2, 3],
+            "dropout": [0.3, 0.5]
         },
         "mamba": {
-            "d_model": [128],
-            "d_state": [16],
-            "d_conv": [4],
+            "d_model": [128, 256],
+            "d_state": [16, 32, 64],
+            "d_conv": [4, 8],
             "expand": [2]
         },
         "hybrid_serial": {
-            "d_model": [128],
-            "lstm_hidden": [128],
+            "d_model": [64, 128],
+            "d_state": [16, 32],
+            "d_conv": [4, 8],
+            "lstm_hidden": [64, 128],
             "dropout": [0.3]
         }
     },
     "global_param_grid": {
         "batch_size": [64],
-        "learning_rate": [0.0005],
+        "learning_rate": [0.0001],
         "epochs": [100],
-        "is_multilabel": [True],
-        "sampling_rate": [100],
+        "is_multilabel": [True, False],
+        "sampling_rate": [100, 500],
         "use_focal_loss": [True]
     }
 }

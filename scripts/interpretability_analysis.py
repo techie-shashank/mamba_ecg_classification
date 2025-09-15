@@ -343,7 +343,8 @@ def analyze_samples_interpretability(model, ecg_samples_dict, classes, args, out
             ecg_id=ecg_id,
             true_class=true_class,
             predicted_class=predicted_class,
-            prediction_probabilities=probabilities
+            prediction_probabilities=probabilities,
+            model_name=args.model.upper()  # Pass the actual model name
         )
         
         logger.info(f"Generated attribution visualizations for ECG ID: {ecg_id}")

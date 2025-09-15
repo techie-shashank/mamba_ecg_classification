@@ -252,10 +252,13 @@ def calculate_store_metrics(
         )
     else:
         logger.info("[Evaluation] Running Binary Classification Evaluation...")
+        # For binary classification, extract positive class probabilities for AUC calculation
+        y_prob_positive_class = y_prob[:, 1] if y_prob.shape[1] == 2 else y_prob
+        
         metrics = calculate_binary_classification_metrics(
             y_true_binary=y_true,
             y_pred_binary=y_pred,
-            y_prob_binary=y_prob,
+            y_prob_binary=y_prob_positive_class,  # Use positive class probabilities
             class_names=class_names
         )
     

@@ -54,13 +54,15 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, c
     """
     num_epochs = config.get("epochs", 10)
     is_multilabel = config.get("is_multilabel", False)
+    gradient_clip_norm = config.get("gradient_clip_norm", 1.0)  # Default: 1.0
 
     logger.info(f"Starting training loop for {num_epochs} epochs")
+    logger.info(f"Gradient clipping enabled with max_norm={gradient_clip_norm}")
     log_memory_usage("before training loop")
 
     # Initialize training utilities
     early_stopping = EarlyStopping(patience=15, min_delta=0.001)
-    scheduler = get_scheduler(optimizer, scheduler_type="reduce_lr", factor=0.5, patience=7, min_lr=1e-6)
+    scheduler = get_scheduler(optimizer, scheduler_type="reduce_lr", factor=0.5, patience=10, min_lr=1e-6)
     
     logger.info("Initialized early stopping (patience=15) and learning rate scheduler")
 
@@ -100,6 +102,17 @@ def train_model(model, train_loader, val_loader, criterion, optimizer, device, c
                 
             loss = criterion(outputs, y_batch)
             loss.backward()
+            
+            # Gradient clipping to prevent gradient explosion
+            grad_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=gradient_clip_norm)
+            
+            # Log gradient statistics on first batch of each epoch
+            if batch_idx == 0:
+                if grad_norm > gradient_clip_norm:
+                    logger.info(f"Gradient clipped: norm {grad_norm:.4f} -> {gradient_clip_norm}")
+                else:
+                    logger.info(f"Gradient norm: {grad_norm:.4f} (no clipping needed)")
+            
             optimizer.step()
             train_loss += loss.item()
             batch_count += 1

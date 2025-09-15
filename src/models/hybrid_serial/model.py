@@ -57,5 +57,5 @@ class HybridSerialClassifier(nn.Module):
         lstm_out, _ = self.lstm(x)      # (batch, time_steps, lstm_hidden)
 
         # Step 4: take last timestep and classify
-        out = lstm_out[:, -1, :]        # (batch, lstm_hidden)
+        out = lstm_out.mean(dim=1)  # Global average pooling across all timesteps
         return self.fc(out)             # (batch, num_classes)

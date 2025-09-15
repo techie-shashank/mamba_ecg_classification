@@ -2,9 +2,10 @@
   "batch_size": 64,
   "epochs": 100,
   "learning_rate": 0.0005,
+  "gradient_clip_norm": 1.0,
   "is_multilabel": true,
   "use_focal_loss": true,
-  "sampling_rate": 500,
+  "sampling_rate": 100,
   "model_hyperparameters": {
     "lstm": {
       "hidden_size": 256,

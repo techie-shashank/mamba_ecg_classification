@@ -156,7 +156,8 @@ class IGAttributor:
             plt.show()
 
     def visualize_attribution_for_all_classes(self, sample, class_names, save_dir=None, ecg_id=None, 
-                                             true_class=None, predicted_class=None, prediction_probabilities=None):
+                                             true_class=None, predicted_class=None, prediction_probabilities=None,
+                                             model_name=None):
         """
         Create 12-lead ECG attribution visualizations for all classes
         
@@ -168,6 +169,7 @@ class IGAttributor:
             true_class: Ground truth class name
             predicted_class: Model's predicted class name
             prediction_probabilities: Array of prediction probabilities for all classes
+            model_name: str - actual model name (LSTM, Mamba, Hybrid)
             
         Returns:
             dict: Attribution data for all classes
@@ -220,7 +222,7 @@ class IGAttributor:
                 
                 self.plot_12lead_attribution(
                     signal, attr, ecg_id, label, 
-                    model_name="LSTM",  # You can make this dynamic based on model type
+                    model_name=model_name or "Unknown",  # Use passed model name or fallback
                     save_path=save_path,
                     true_class=true_class,
                     predicted_class=predicted_class,
