@@ -18,13 +18,13 @@ COMPREHENSIVE_SEARCH = {
         "mamba": {
             "d_model": [128, 256],
             "d_state": [16, 32, 64],
-            "d_conv": [4, 8],
+            "d_conv": [2, 4],
             "expand": [2]
         },
         "hybrid_serial": {
             "d_model": [64, 128],
             "d_state": [16, 32],
-            "d_conv": [4, 8],
+            "d_conv": [2, 4],
             "lstm_hidden": [64, 128],
             "dropout": [0.3]
         }

@@ -79,10 +79,10 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "args": [
-                "--model", "lstm",
+                "--model", "hybrid_serial",
                 "--dataset", "ptbxl", 
-                "--run_number", "1",
-                "--ecg_id", "1"
+                "--run_number", "9",
+                "--ecg_id", "17364"
             ]
         },
         {
@@ -93,9 +93,9 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "args": [
-                "--model", "hybrid_serial",
+                "--model", "lstm",
                 "--dataset", "ptbxl",
-                "--run_number", "8", 
+                "--run_number", "29", 
                 "--ecg_id", "4297", "4702", "6992", "7426", "11939", "14836", "17364", "17516", "18122", "18754", "18932", "18949", "20613", "21288"
             ]
         }
