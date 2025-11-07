@@ -1,6 +1,9 @@
-# Mamba Time Series Forecasting
+# Comparative Study of LSTM, MAMBA, and  Hybrid Architectures for ECG Classification
 
-A comprehensive deep learning framework for time series forecasting using state-of-the-art architectures including LSTM and Mamba models. Designed for ECG classification and extensible to other time series tasks with full interpretability analysis.
+This project presents a comparative study of LSTM, MAMBA, and hybrid (MAMBA + LSTM) architectures for ECG signal classification. The goal is to evaluate the performance, robustness, and representation learning capabilities of each model, particularly in handling complex time-series biomedical data.
+
+## Project Presentation
+📄 [Link to presentation](https://drive.google.com/file/d/1Ax2YCpB9OaVNeMpD-qeII4mFn_9e05IC/view?usp=drive_link)
 
 ## Key Features
 
@@ -97,3 +100,6 @@ If you use this codebase in your research, please cite appropriately.
 
 ## License
 This project is licensed under the MIT License.
+
+
+
