@@ -7,6 +7,7 @@ from models.mamba.model import MambaClassifier
 from logger import logger
 
 from models.hybrid_serial.model import HybridSerialClassifier
+from models.hybrid_serial_rev.model import HybridSerialReversedClassifier
 from utils import get_device
 
 
@@ -26,6 +27,8 @@ def get_model_class(model_type):
         return MambaClassifier
     elif model_type.lower() == "hybrid_serial":
         return HybridSerialClassifier
+    elif model_type.lower() == "hybrid_serial_rev":
+        return HybridSerialReversedClassifier
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 

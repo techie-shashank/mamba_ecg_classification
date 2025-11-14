@@ -18,7 +18,7 @@ def extract_model_embeddings(model, data_loader, model_type: str, device):
     Args:
         model: The trained model
         data_loader: DataLoader for the dataset
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial')
+        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev')
         device: Device to run inference on
         
     Returns:
@@ -48,8 +48,8 @@ def extract_model_embeddings(model, data_loader, model_type: str, device):
         elif model_type.lower() == 'mamba':
             # For Mamba, we capture the last layer's output before classification
             captured_embedding = output.detach()
-        elif model_type.lower() == 'hybrid_serial':
-            # For hybrid models, capture the input to the FC layer (embeddings after LSTM)
+        elif model_type.lower() in ['hybrid_serial', 'hybrid_serial_rev']:
+            # For hybrid models, capture the input to the FC layer (embeddings after LSTM/Mamba)
             if len(input) > 0:
                 captured_embedding = input[0].detach()  # Input to FC layer
             else:
@@ -72,13 +72,13 @@ def extract_model_embeddings(model, data_loader, model_type: str, device):
             for name, module in model.named_modules():
                 if ('mamba' in name.lower() or 'backbone' in name.lower()) and hasattr(module, 'forward'):
                     hook_handle = module.register_forward_hook(capture_embedding_hook)
-        elif model_type.lower() == 'hybrid_serial':
+        elif model_type.lower() in ['hybrid_serial', 'hybrid_serial_rev']:
             # For hybrid models, hook to the FC layer to capture its input (embeddings)
             hook_registered = False
             for name, module in model.named_modules():
                 if 'fc' in name.lower() and hasattr(module, 'forward'):
                     hook_handle = module.register_forward_hook(capture_embedding_hook)
-                    logger.debug(f"Registered hook for hybrid_serial on FC module: {name}")
+                    logger.debug(f"Registered hook for {model_type} on FC module: {name}")
                     hook_registered = True
                     break
         
@@ -127,7 +127,7 @@ def extract_embeddings_from_dataloaders(model, train_loader, test_loader, model_
         model: The trained model
         train_loader: Training DataLoader (can be None for t-SNE only)
         test_loader: Test DataLoader
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial')
+        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev')
         device: Device to run inference on
         
     Returns:

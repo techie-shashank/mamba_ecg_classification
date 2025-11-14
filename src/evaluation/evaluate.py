@@ -32,7 +32,7 @@ def evaluate_and_save_metrics(model, criterion, test_loader, config, classes, sa
         classes (list): Class names.
         save_dir (str): Directory to save metrics.
         logger: Logger instance.
-        model_type (str): Type of model for t-SNE ('lstm', 'mamba', 'hybrid_serial').
+        model_type (str): Type of model for t-SNE ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev').
         generate_tsne (bool): Whether to generate t-SNE visualization.
         train_loader: DataLoader for train set (needed for linear probing).
         enable_linear_probe (bool): Whether to perform linear probing evaluation.

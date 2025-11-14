@@ -113,6 +113,11 @@ class ExperimentRunner:
                     'd_model': [128, 256],
                     'lstm_hidden': [64, 128],
                     'dropout': [0.2, 0.3]
+                },
+                'hybrid_serial_rev': {
+                    'd_model': [128, 256],
+                    'lstm_hidden': [64, 128],
+                    'dropout': [0.2, 0.3]
                 }
             }
 

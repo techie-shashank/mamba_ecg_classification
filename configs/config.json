@@ -29,6 +29,16 @@
       "lstm_layers": 1,
       "fc_hidden_size": 128,
       "dropout": 0.3
+    },
+    "hybrid_serial_rev": {
+      "d_model": 128,
+      "d_state": 16,
+      "d_conv": 4,
+      "expand": 2,
+      "lstm_hidden": 128,
+      "lstm_layers": 1,
+      "fc_hidden_size": 128,
+      "dropout": 0.3
     }
   },
   "dataset": "ptbxl",

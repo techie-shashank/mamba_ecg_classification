@@ -8,7 +8,7 @@ logger = get_experiment_logger('experiment_examples')
 
 COMPREHENSIVE_SEARCH = {
     "datasets": ["ptbxl"],
-    "models": ["lstm", "mamba", "hybrid_serial"],
+    "models": ["lstm", "mamba", "hybrid_serial", "hybrid_serial_rev"],
     "hyperparameter_grids": {
         "lstm": {
             "hidden_size": [128, 256],
@@ -22,6 +22,13 @@ COMPREHENSIVE_SEARCH = {
             "expand": [2]
         },
         "hybrid_serial": {
+            "d_model": [64, 128],
+            "d_state": [16, 32],
+            "d_conv": [2, 4],
+            "lstm_hidden": [64, 128],
+            "dropout": [0.3]
+        },
+        "hybrid_serial_rev": {
             "d_model": [64, 128],
             "d_state": [16, 32],
             "d_conv": [2, 4],

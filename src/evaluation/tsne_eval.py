@@ -4,6 +4,7 @@ t-SNE Evaluation Module
 
 Generates t-SNE visualizations during model evaluation and saves them to the experiment plots folder.
 Uses shared embedding extraction for consistency with linear probing.
+Complies with MDPI Diagnostics journal formatting requirements.
 """
 
 import os
@@ -17,6 +18,33 @@ warnings.filterwarnings('ignore')
 from logger import logger
 from evaluation.embedding_extractor import extract_model_embeddings
 
+# MDPI Diagnostics journal requirements
+PLOT_DPI = 600  # Minimum 600 dpi for publication quality
+FONT_SIZE_TITLE = 14  # Minimum 12pt
+FONT_SIZE_LABEL = 12  # Minimum 12pt
+FONT_SIZE_TICK = 12   # Minimum 12pt
+FONT_SIZE_LEGEND = 10 # Slightly smaller but still readable
+
+# Use a Palatino-like font for plots that matches the MDPI LaTeX template.
+# Use Matplotlib’s built-in Palatino clone "P052" to avoid missing-font errors.
+
+FONT_FAMILY = 'serif'  # Match LaTeX document font
+SERIF = ['P052', 'URW Palladio L', 'Book Antiqua', 'Times New Roman', 'DejaVu Serif', '']  # Fallbacks in case primary is unavailable
+
+# Configure matplotlib defaults for MDPI compliance
+
+plt.rcParams['font.family'] = FONT_FAMILY
+plt.rcParams['font.serif'] = SERIF
+plt.rcParams['font.size'] = FONT_SIZE_TICK
+plt.rcParams['axes.labelsize'] = FONT_SIZE_LABEL
+plt.rcParams['axes.titlesize'] = FONT_SIZE_TITLE
+plt.rcParams['xtick.labelsize'] = FONT_SIZE_TICK
+plt.rcParams['ytick.labelsize'] = FONT_SIZE_TICK
+plt.rcParams['legend.fontsize'] = FONT_SIZE_LEGEND
+plt.rcParams['figure.dpi'] = PLOT_DPI
+plt.rcParams['savefig.dpi'] = PLOT_DPI
+plt.rcParams['savefig.bbox'] = 'tight'
+
 
 def generate_tsne_from_embeddings(embeddings, labels, model_type: str, class_names, save_path: str, is_multilabel: bool = False):
     """
@@ -25,7 +53,7 @@ def generate_tsne_from_embeddings(embeddings, labels, model_type: str, class_nam
     Args:
         embeddings: Pre-extracted embeddings array
         labels: Corresponding labels array
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial')
+        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev')
         class_names: List of class names
         save_path: Path to save the plot
         is_multilabel: Whether this is a multilabel classification task
@@ -56,38 +84,52 @@ def generate_tsne_from_embeddings(embeddings, labels, model_type: str, class_nam
             os.makedirs(per_class_dir, exist_ok=True)
             
             for i, class_name in enumerate(class_names):
-                plt.figure(figsize=(10, 8))
+                fig, ax = plt.subplots(figsize=(10, 8))
                 
                 # Get class-specific labels
                 class_labels = labels[:, i]
                 
                 # Plot points with different colors for presence/absence of class
-                scatter_positive = plt.scatter(embeddings_2d[class_labels == 1, 0], 
+                # Using larger markers and distinct styles for journal quality
+                scatter_positive = ax.scatter(embeddings_2d[class_labels == 1, 0], 
                                              embeddings_2d[class_labels == 1, 1], 
-                                             c='red', alpha=0.6, s=20, label=f'{class_name} Present')
-                scatter_negative = plt.scatter(embeddings_2d[class_labels == 0, 0], 
+                                             c='#EF6461', alpha=0.7, s=30, 
+                                             marker='o', edgecolors='black', linewidth=0.5,
+                                             label=f'{class_name} Present')
+                scatter_negative = ax.scatter(embeddings_2d[class_labels == 0, 0], 
                                              embeddings_2d[class_labels == 0, 1], 
-                                             c='blue', alpha=0.6, s=20, label=f'{class_name} Absent')
+                                             c='#7D8CC4', alpha=0.7, s=30, 
+                                             marker='s', edgecolors='black', linewidth=0.5,
+                                             label=f'{class_name} Absent')
                 
-                plt.title(f't-SNE Visualization - {class_name} Class ({model_type.upper()})')
-                plt.xlabel('t-SNE Component 1')
-                plt.ylabel('t-SNE Component 2')
-                plt.legend()
-                plt.grid(True, alpha=0.3)
+                ax.set_title(f't-SNE Visualization - {class_name} Class ({model_type.upper()})', 
+                           fontsize=FONT_SIZE_TITLE, fontweight='bold', fontfamily=FONT_FAMILY)
+                ax.set_xlabel('t-SNE Component 1', fontsize=FONT_SIZE_LABEL, fontfamily=FONT_FAMILY)
+                ax.set_ylabel('t-SNE Component 2', fontsize=FONT_SIZE_LABEL, fontfamily=FONT_FAMILY)
+                ax.tick_params(labelsize=FONT_SIZE_TICK)
+                ax.legend(fontsize=FONT_SIZE_LEGEND, frameon=True, edgecolor='black')
+                ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
                 
-                # Save individual class plot
-                class_plot_path = os.path.join(per_class_dir, f'{class_name.lower()}_tsne.png')
-                plt.tight_layout()
-                plt.savefig(class_plot_path, dpi=300, bbox_inches='tight')
+                # Save individual class plot in multiple formats (MDPI requirement)
+                class_name_clean = class_name.lower().replace(' ', '_')
+                
+                # High-resolution raster format
+                class_plot_path_png = os.path.join(per_class_dir, f'{class_name_clean}_tsne.png')
+                plt.savefig(class_plot_path_png, dpi=PLOT_DPI, bbox_inches='tight', format='png')
+                
+                # Vector format for publication
+                class_plot_path_pdf = os.path.join(per_class_dir, f'{class_name_clean}_tsne.pdf')
+                plt.savefig(class_plot_path_pdf, bbox_inches='tight', format='pdf')
+                
                 plt.close()
-                logger.info(f"t-SNE plot for {class_name} saved to: {class_plot_path}")
+                logger.info(f"t-SNE plot for {class_name} saved to: {class_plot_path_png} (PNG) and {class_plot_path_pdf} (PDF)")
             
             # Create multilabel overview plot
             logger.info("Creating multilabel overview t-SNE plot...")
-            plt.figure(figsize=(16, 10))
+            fig, ax = plt.subplots(figsize=(16, 12))
             
-            # Define distinct colors for single classes
-            base_colors = ['#E74C3C', '#3498DB', '#2ECC71', '#F39C12', '#9B59B6']  # Vibrant distinct colors
+            # Define distinct colors for single classes (restricted color palette)
+            base_colors = ['#EF6461', '#7D8CC4', '#780116', '#2A1E5C', '#918BAB']  # Restricted color palette
             
             # Create label combination strings for each sample
             label_combinations = []
@@ -135,26 +177,26 @@ def generate_tsne_from_embeddings(embeddings, labels, model_type: str, class_nam
             
             for i, combo in enumerate(significant_combinations):
                 if combo == 'None':
-                    combination_colors[combo] = '#CCCCCC'  # Gray for no labels
+                    combination_colors[combo] = '#FAE3C6'  # Light beige for no labels
                 elif ' + ' not in combo:  # Single class
                     # Find which single class this is
                     for j, class_name in enumerate(class_names):
                         if combo == class_name:
-                            combination_colors[combo] = base_colors[j]
+                            combination_colors[combo] = base_colors[j % len(base_colors)]
                             break
                 else:  # Multiple classes - create a mixed color
-                    # For combinations, use distinct colors
+                    # For combinations, use distinct colors from restricted palette
                     combo_classes = combo.split(' + ')
                     if len(combo_classes) == 2:
-                        combination_colors[combo] = '#8E44AD'  # Purple for 2-class combinations
+                        combination_colors[combo] = '#2A1E5C'  # Dark purple for 2-class combinations
                     elif len(combo_classes) == 3:
-                        combination_colors[combo] = '#D35400'  # Orange for 3-class combinations
+                        combination_colors[combo] = '#780116'  # Dark red for 3-class combinations
                     else:
-                        combination_colors[combo] = '#2C3E50'  # Dark blue for 4+ class combinations
+                        combination_colors[combo] = '#918BAB'  # Gray-purple for 4+ class combinations
             
             # Add color for "Others"
             if other_combinations:
-                combination_colors['Others'] = '#7F8C8D'  # Medium gray for others
+                combination_colors['Others'] = '#918BAB'  # Gray-purple for others
             
             # Plot significant combinations
             for i, combo in enumerate(significant_combinations):
@@ -173,13 +215,13 @@ def generate_tsne_from_embeddings(embeddings, labels, model_type: str, class_nam
                     size = max(50, min(100, 40 + count * 2 + len(combo.split(' + ')) * 5))
                     alpha = 0.9
                 
-                plt.scatter(embeddings_2d[combo_mask, 0], 
+                ax.scatter(embeddings_2d[combo_mask, 0], 
                           embeddings_2d[combo_mask, 1], 
                           c=combination_colors[combo], 
                           alpha=alpha, 
                           s=size,
                           marker=marker,
-                          label=f'{combo} ({count})',
+                          label=f'{combo} (n={count})',
                           edgecolors='white' if ' + ' not in combo else 'black', 
                           linewidth=0.8 if ' + ' not in combo else 1.2)
             
@@ -189,26 +231,28 @@ def generate_tsne_from_embeddings(embeddings, labels, model_type: str, class_nam
                 others_count = np.sum(others_mask)
                 
                 if others_count > 0:
-                    plt.scatter(embeddings_2d[others_mask, 0], 
+                    ax.scatter(embeddings_2d[others_mask, 0], 
                               embeddings_2d[others_mask, 1], 
                               c=combination_colors['Others'], 
                               alpha=0.5, 
                               s=25,
                               marker='.',
-                              label=f'Others ({others_count})',
+                              label=f'Others (n={others_count})',
                               edgecolors='none')
             
-            plt.title(f'Multilabel t-SNE Overview - Major Label Combinations ({model_type.upper()})', 
-                     fontsize=16, fontweight='bold', pad=20)
-            plt.xlabel('t-SNE Component 1', fontsize=14)
-            plt.ylabel('t-SNE Component 2', fontsize=14)
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9, ncol=1)
-            plt.grid(True, alpha=0.3)
+            ax.set_title(f'Multilabel t-SNE Overview - Major Label Combinations ({model_type.upper()})', 
+                        fontsize=FONT_SIZE_TITLE, fontweight='bold', fontfamily=FONT_FAMILY, pad=20)
+            ax.set_xlabel('t-SNE Component 1', fontsize=FONT_SIZE_LABEL, fontfamily=FONT_FAMILY)
+            ax.set_ylabel('t-SNE Component 2', fontsize=FONT_SIZE_LABEL, fontfamily=FONT_FAMILY)
+            ax.tick_params(labelsize=FONT_SIZE_TICK)
+            ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=FONT_SIZE_LEGEND, 
+                     ncol=1, frameon=True, edgecolor='black')
+            ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
             
         else:
             # For single-label classification
             logger.info("Creating single-label t-SNE visualization...")
-            plt.figure(figsize=(10, 8))
+            fig, ax = plt.subplots(figsize=(10, 8))
             
             # Convert labels if needed
             if labels.ndim > 1:
@@ -216,29 +260,48 @@ def generate_tsne_from_embeddings(embeddings, labels, model_type: str, class_nam
             else:
                 plot_labels = labels
             
-            # Create scatter plot with different colors for each class
+            # Create scatter plot with different colors for each class (restricted palette)
             unique_labels = np.unique(plot_labels)
-            colors = plt.cm.Set3(np.linspace(0, 1, len(unique_labels)))
+            restricted_colors = ['#EF6461', '#7D8CC4', '#780116', '#2A1E5C', '#918BAB', '#FAE3C6']
+            # Define distinct markers for better differentiation
+            markers = ['o', 's', '^', 'D', 'v', 'p']
             
             for i, label in enumerate(unique_labels):
                 mask = plot_labels == label
                 class_name = class_names[int(label)] if int(label) < len(class_names) else f'Class {label}'
-                plt.scatter(embeddings_2d[mask, 0], embeddings_2d[mask, 1], 
-                          c=[colors[i]], alpha=0.6, s=20, label=class_name)
+                color = restricted_colors[i % len(restricted_colors)]
+                marker = markers[i % len(markers)]
+                count = np.sum(mask)
+                ax.scatter(embeddings_2d[mask, 0], embeddings_2d[mask, 1], 
+                          c=color, alpha=0.7, s=30, marker=marker,
+                          edgecolors='black', linewidth=0.5,
+                          label=f'{class_name} (n={count})')
             
-            plt.title(f't-SNE Visualization ({model_type.upper()})')
-            plt.xlabel('t-SNE Component 1')
-            plt.ylabel('t-SNE Component 2')
-            plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-            plt.grid(True, alpha=0.3)
+            ax.set_title(f't-SNE Visualization ({model_type.upper()})', 
+                        fontsize=FONT_SIZE_TITLE, fontweight='bold', fontfamily=FONT_FAMILY)
+            ax.set_xlabel('t-SNE Component 1', fontsize=FONT_SIZE_LABEL, fontfamily=FONT_FAMILY)
+            ax.set_ylabel('t-SNE Component 2', fontsize=FONT_SIZE_LABEL, fontfamily=FONT_FAMILY)
+            ax.tick_params(labelsize=FONT_SIZE_TICK)
+            ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=FONT_SIZE_LEGEND,
+                     frameon=True, edgecolor='black')
+            ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
         
-        # Save the main plot
+        # Save the main plot in multiple formats (MDPI requirement)
         plt.tight_layout()
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        
+        # High-resolution raster format
+        plt.savefig(save_path, dpi=PLOT_DPI, bbox_inches='tight', format='png')
+        
+        # Vector format for publication (PDF - best for journals)
+        save_path_pdf = save_path.replace('.png', '.pdf')
+        plt.savefig(save_path_pdf, bbox_inches='tight', format='pdf')
+        
         plt.close()
         
         plot_type = "Multilabel overview" if is_multilabel else "Binary classification"
-        logger.info(f"{plot_type} t-SNE plot saved to: {save_path}")
+        logger.info(f"{plot_type} t-SNE plot saved to:")
+        logger.info(f"  - PNG (600 dpi): {save_path}")
+        logger.info(f"  - PDF (vector): {save_path_pdf}")
         
         # Save embedding data for potential future use
         embeddings_path = save_path.replace('.png', '_embeddings.npz')
@@ -259,7 +322,7 @@ def generate_tsne_plot(model, data_loader, model_type: str, class_names, save_pa
     Args:
         model: The trained model
         data_loader: DataLoader for the dataset
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial')
+        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev')
         class_names: List of class names
         save_path: Path to save the plot
         device: Device to run inference on
@@ -279,7 +342,7 @@ def evaluate_with_tsne(model, test_loader, model_type: str, class_names, plots_d
     Args:
         model: The trained model
         test_loader: Test DataLoader
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial')
+        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev')
         class_names: List of class names
         plots_dir: Directory to save t-SNE plots
         device: Device to run inference on
@@ -302,7 +365,7 @@ def evaluate_with_tsne_from_embeddings(test_embeddings, test_labels, model_type:
     Args:
         test_embeddings: Pre-extracted test embeddings
         test_labels: Pre-extracted test labels
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial')
+        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev')
         class_names: List of class names
         plots_dir: Directory to save t-SNE plots
         is_multilabel: Whether this is a multilabel classification task
