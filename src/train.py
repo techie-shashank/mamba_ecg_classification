@@ -36,7 +36,7 @@ def parse_arguments():
     """
     parser = argparse.ArgumentParser(description="Train and evaluate a model.")
     parser.add_argument("--dataset", type=str, required=True, help="Dataset to use")
-    parser.add_argument("--model", type=str, required=True, choices=["lstm", "mamba", "hybrid_serial", "hybrid_serial_rev"], help="Model type")
+    parser.add_argument("--model", type=str, required=True, choices=["lstm", "mamba", "hybrid_serial", "hybrid_serial_rev", "hybrid_parallel", "hybrid_crossattn"], help="Model type")
     return parser.parse_args()
 
 

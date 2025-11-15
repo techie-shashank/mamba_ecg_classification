@@ -63,7 +63,7 @@ Examples:
     
     # Required arguments
     parser.add_argument("--model", type=str, required=True, 
-                       choices=["lstm", "mamba", "hybrid_serial", "hybrid_serial_rev"], 
+                       choices=["lstm", "mamba", "hybrid_serial", "hybrid_serial_rev", "hybrid_parallel", "hybrid_crossattn"], 
                        help="Model type to analyze")
     parser.add_argument("--dataset", type=str, required=True, 
                        help="Dataset name (e.g., ptbxl)")

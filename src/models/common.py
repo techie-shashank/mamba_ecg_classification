@@ -8,6 +8,8 @@ from logger import logger
 
 from models.hybrid_serial.model import HybridSerialClassifier
 from models.hybrid_serial_rev.model import HybridSerialReversedClassifier
+from models.hybrid_parallel.model import HybridParallelClassifier
+from models.hybrid_crossattn.model import HybridCrossAttentionClassifier
 from utils import get_device
 
 
@@ -29,6 +31,10 @@ def get_model_class(model_type):
         return HybridSerialClassifier
     elif model_type.lower() == "hybrid_serial_rev":
         return HybridSerialReversedClassifier
+    elif model_type.lower() == "hybrid_parallel":
+        return HybridParallelClassifier
+    elif model_type.lower() == "hybrid_crossattn":
+        return HybridCrossAttentionClassifier
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 
