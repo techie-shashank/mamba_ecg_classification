@@ -1,0 +1,16 @@
+{
+  "accuracy": 0.8489341983317887,
+  "macro_precision": 0.8456482617868915,
+  "macro_recall": 0.8527179916553504,
+  "macro_f1": 0.8472288696150689,
+  "macro_auc": 0.9214470156972285,
+  "cv_mean_accuracy": 0.9010920436817471,
+  "cv_std_accuracy": 0.0025507537115820405,
+  "model_type": "hybrid_serial_rev",
+  "embedding_dim": 64,
+  "train_samples": 19230,
+  "test_samples": 1079,
+  "is_multilabel": false,
+  "used_pca": true,
+  "pca_components": 64
+}

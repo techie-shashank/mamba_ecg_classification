@@ -1,0 +1,16 @@
+{
+  "accuracy": 0.82483781278962,
+  "macro_precision": 0.8229076404648924,
+  "macro_recall": 0.8303665031978442,
+  "macro_f1": 0.8233808547621461,
+  "macro_auc": 0.8991078401711144,
+  "cv_mean_accuracy": 0.882319292771711,
+  "cv_std_accuracy": 0.0035061898764508757,
+  "model_type": "mamba",
+  "embedding_dim": 64,
+  "train_samples": 19230,
+  "test_samples": 1079,
+  "is_multilabel": false,
+  "used_pca": true,
+  "pca_components": 64
+}

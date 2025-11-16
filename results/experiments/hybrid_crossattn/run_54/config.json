@@ -1,0 +1,69 @@
+{
+    "batch_size": 64,
+    "epochs": 100,
+    "learning_rate": 0.0001,
+    "gradient_clip_norm": 1.0,
+    "is_multilabel": false,
+    "use_focal_loss": true,
+    "sampling_rate": 100,
+    "model_hyperparameters": {
+        "lstm": {
+            "hidden_size": 256,
+            "num_layers": 3,
+            "fc_hidden_size": 128,
+            "dropout": 0.5
+        },
+        "mamba": {
+            "d_model": 128,
+            "d_state": 16,
+            "d_conv": 4,
+            "expand": 2,
+            "fc_hidden_size": 64
+        },
+        "hybrid_serial": {
+            "d_model": 128,
+            "d_state": 16,
+            "d_conv": 4,
+            "expand": 2,
+            "lstm_hidden": 128,
+            "lstm_layers": 1,
+            "fc_hidden_size": 128,
+            "dropout": 0.3
+        },
+        "hybrid_serial_rev": {
+            "d_model": 128,
+            "d_state": 16,
+            "d_conv": 4,
+            "expand": 2,
+            "lstm_hidden": 128,
+            "lstm_layers": 1,
+            "fc_hidden_size": 128,
+            "dropout": 0.3
+        },
+        "hybrid_parallel": {
+            "d_model": 128,
+            "d_state": 16,
+            "d_conv": 4,
+            "expand": 2,
+            "lstm_hidden": 128,
+            "lstm_layers": 1,
+            "fc_hidden_size": 128,
+            "dropout": 0.3,
+            "fusion_method": "concat"
+        },
+        "hybrid_crossattn": {
+            "d_model": 128,
+            "d_state": 16,
+            "d_conv": 4,
+            "expand": 2,
+            "lstm_hidden": 64,
+            "lstm_layers": 1,
+            "fc_hidden_size": 128,
+            "dropout": 0.3,
+            "num_attn_heads": 4,
+            "fusion_method": "concat"
+        }
+    },
+    "dataset": "ptbxl",
+    "model": "hybrid_crossattn"
+}

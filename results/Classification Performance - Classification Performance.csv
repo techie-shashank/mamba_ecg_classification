@@ -1,0 +1,16 @@
+,,,,,,,
+ Classification performance of all architectures for binary and multi-label ECG tasks at 100Hz Sampling Rate.,,,,,,,
+,,,,,,,
+Run ID,Model,Type,Accuracy,F1-Score,Precision,Recall,ROC -AUC
+run_3,LSTM,Binary,0.853,0.867,0.905,0.831,0.925
+run_43,MAMBA,Binary,0.825,0.85,0.841,0.858,0.913
+run_91,HYBRID_SERIAL (MAMBA -> LSTM),Binary,0.845,0.861,0.893,0.831,0.919
+run_4,HYBRID_SERIAL_REV (LSTM -> MAMBA),Binary,0.847,0.862,0.899,0.828,0.921
+run_18,HYBRID_PARALLEL,Binary,0.845,0.858,0.908,0.813,0.921
+run_54,HYBRID_CROSSATTN,Binary,0.839,0.857,0.874,0.841,0.918
+run_29,LSTM,Multi-label,0.622,0.728,0.778,0.693,0.92
+run_25,MAMBA,Multi-label,0.597,0.718,0.784,0.674,0.908
+run_9,HYBRID_SERIAL (MAMBA -> LSTM),Multi-label,0.618,0.719,0.793,0.672,0.911
+run_27,HYBRID_SERIAL_REV (LSTM -> MAMBA),Multi-label,0.62,0.724,0.79,0.683,0.91
+run_21,HYBRID_PARALLEL,Multi-label,0.602,0.708,0.783,0.66,0.905
+run_41,HYBRID_CROSSATTN,Multi-label,0.612,0.718,0.782,0.672,0.913

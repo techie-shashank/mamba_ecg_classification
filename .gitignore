@@ -1,6 +1,6 @@
 # Data and Datasets
 /data/
-experiments/
+/experiments/
 remote_runs/
 
 # Outputs and Generated Files

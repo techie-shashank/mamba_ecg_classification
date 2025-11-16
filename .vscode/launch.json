@@ -79,9 +79,9 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "args": [
-                "--model", "hybrid_serial",
+                "--model", "hybrid_crossattn",
                 "--dataset", "ptbxl", 
-                "--run_number", "9",
+                "--run_number", "54",
                 "--ecg_id", "17364"
             ]
         },

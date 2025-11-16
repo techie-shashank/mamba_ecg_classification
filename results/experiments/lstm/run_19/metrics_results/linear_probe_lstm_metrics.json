@@ -1,0 +1,16 @@
+{
+  "accuracy": 0.7766450417052827,
+  "macro_precision": 0.7792446730951759,
+  "macro_recall": 0.7856635262828315,
+  "macro_f1": 0.7758062221685771,
+  "macro_auc": 0.8357666031084876,
+  "cv_mean_accuracy": 0.8190847633905356,
+  "cv_std_accuracy": 0.003367711879083148,
+  "model_type": "lstm",
+  "embedding_dim": 64,
+  "train_samples": 19230,
+  "test_samples": 1079,
+  "is_multilabel": false,
+  "used_pca": true,
+  "pca_components": 64
+}
