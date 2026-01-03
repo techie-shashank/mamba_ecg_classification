@@ -14,6 +14,34 @@ from captum.attr import IntegratedGradients
 from logger import logger
 from utils import get_device
 
+# ============================================================================
+# MDPI Diagnostics Compliance Configuration
+# ============================================================================
+PLOT_DPI = 600  # MDPI requirement: 600+ DPI for publication
+FONT_FAMILY = 'serif'  # Professional serif font for scientific publications
+TITLE_FONTSIZE = 14
+LABEL_FONTSIZE = 12
+TICK_FONTSIZE = 12
+LEGEND_FONTSIZE = 10
+
+# Restricted color palette for MDPI Diagnostics
+MDPI_COLORS = ['#EF6461', '#FAE3C6', '#7D8CC4', '#780116', '#2A1E5C', '#918BAB', '#F8F7F9']
+ATTRIBUTION_COLOR = '#EF6461'  # Primary color for attribution overlay
+
+# Configure matplotlib for MDPI compliance
+plt.rcParams['font.family'] = FONT_FAMILY
+plt.rcParams['font.size'] = LABEL_FONTSIZE
+plt.rcParams['axes.titlesize'] = TITLE_FONTSIZE
+plt.rcParams['axes.labelsize'] = LABEL_FONTSIZE
+plt.rcParams['xtick.labelsize'] = TICK_FONTSIZE
+plt.rcParams['ytick.labelsize'] = TICK_FONTSIZE
+plt.rcParams['legend.fontsize'] = LEGEND_FONTSIZE
+plt.rcParams['figure.dpi'] = PLOT_DPI
+plt.rcParams['savefig.dpi'] = PLOT_DPI
+plt.rcParams['savefig.bbox'] = 'tight'
+plt.rcParams['pdf.fonttype'] = 42  # TrueType fonts in PDF
+plt.rcParams['ps.fonttype'] = 42
+
 
 class IGAttributor:
     """
@@ -120,22 +148,25 @@ class IGAttributor:
         time = np.arange(T)
         
         for i in range(12):
-            # Plot ECG signal
+            # Plot ECG signal (keep black as requested)
             axes[i].plot(time, sample[:, i], color='black', linewidth=0.7)
             
             # Get y-axis limits for scaling attribution
             ymin, ymax = axes[i].get_ylim()
             
             # Fill with normalized attribution scaled to signal amplitude range
+            # Use MDPI-compliant color palette
             fill = norm_attr[:, i] * (ymax - ymin) * 0.8  # scale to visually fit
-            axes[i].fill_between(time, ymin, ymin + fill, color='red', alpha=0.4)
+            axes[i].fill_between(time, ymin, ymin + fill, color=ATTRIBUTION_COLOR, alpha=0.7)
             
-            # Set lead name as y-label
-            axes[i].set_ylabel(lead_names[i], rotation=0, labelpad=20, va='center')
+            # Set lead name as y-label (MDPI compliance: 12pt minimum)
+            axes[i].set_ylabel(lead_names[i], rotation=0, labelpad=20, va='center', 
+                             fontsize=LABEL_FONTSIZE)
             axes[i].tick_params(axis='y', which='both', left=False, right=False, labelleft=False)
+            axes[i].tick_params(axis='x', labelsize=TICK_FONTSIZE)
             axes[i].grid(True, alpha=0.3)
 
-        # Set title with prediction information
+        # Set title with prediction information (MDPI compliance: 14pt title)
         supt = f"ECG ID {ecg_id} — Attribution for {label_name}"
         if class_probability is not None:
             supt += f" (P={class_probability:.3f})"
@@ -144,12 +175,14 @@ class IGAttributor:
             supt += f"\n{prediction_info}"
         if model_name:
             supt += f" — Model: {model_name}"
-        plt.suptitle(supt, fontsize=12)
-        plt.xlabel("Time (samples)")
+        plt.suptitle(supt, fontsize=TITLE_FONTSIZE)
+        plt.xlabel("Time (samples)", fontsize=LABEL_FONTSIZE)
         plt.tight_layout(rect=[0, 0.03, 1, 0.97])
         
         if save_path:
-            plt.savefig(save_path, dpi=150, bbox_inches='tight')
+            # Save PNG at 600 DPI (MDPI requirement)
+            plt.savefig(save_path, dpi=PLOT_DPI, bbox_inches='tight')
+            
             plt.close()
             logger.info(f"Saved 12-lead attribution plot: {save_path}")
         else:

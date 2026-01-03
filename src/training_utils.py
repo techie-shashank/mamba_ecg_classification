@@ -52,19 +52,53 @@ def get_scheduler(optimizer, scheduler_type="reduce_lr", **kwargs):
         raise ValueError(f"Unknown scheduler type: {scheduler_type}")
 
 class FocalLoss(nn.Module):
-    """Focal Loss for handling class imbalance"""
-    def __init__(self, alpha=1, gamma=2, reduction='mean'):
+    """
+    Focal Loss for handling class imbalance.
+    
+    For binary classification (binary_mode=True):
+        - Expects inputs: [batch_size, num_classes=2] (logits from softmax head)
+        - Expects targets: [batch_size] (class indices 0 or 1)
+        - Uses CrossEntropyLoss internally
+    
+    For multi-label classification (binary_mode=False):
+        - Expects inputs: [batch_size, num_classes] (logits)
+        - Expects targets: [batch_size, num_classes] (0s and 1s)
+        - Uses BCEWithLogitsLoss internally
+    """
+    def __init__(self, alpha=0.25, gamma=2, reduction='mean', binary_mode=False):
         super().__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.reduction = reduction
+        self.binary_mode = binary_mode
         
     def forward(self, inputs, targets):
-        bce_loss = nn.functional.binary_cross_entropy_with_logits(
-            inputs, targets, reduction='none'
-        )
-        pt = torch.exp(-bce_loss)
-        focal_loss = self.alpha * (1-pt)**self.gamma * bce_loss
+        if self.binary_mode:
+            # Binary classification: inputs are [batch, 2], targets are [batch] with values 0/1
+            ce_loss = nn.functional.cross_entropy(inputs, targets.long(), reduction='none')
+            
+            # Get probabilities for the true class
+            pt = torch.exp(-ce_loss)
+            
+            # Apply alpha weighting: alpha for class 1, (1-alpha) for class 0
+            alpha_t = self.alpha * targets + (1 - self.alpha) * (1 - targets)
+            
+            # Focal loss formula
+            focal_loss = alpha_t * (1 - pt) ** self.gamma * ce_loss
+        else:
+            # Multi-label classification: inputs and targets are [batch, num_classes]
+            bce_loss = nn.functional.binary_cross_entropy_with_logits(
+                inputs, targets, reduction='none'
+            )
+            
+            # Get probabilities
+            pt = torch.exp(-bce_loss)
+            
+            # Apply alpha weighting
+            alpha_t = self.alpha * targets + (1 - self.alpha) * (1 - targets)
+            
+            # Focal loss formula
+            focal_loss = alpha_t * (1 - pt) ** self.gamma * bce_loss
         
         if self.reduction == 'mean':
             return focal_loss.mean()

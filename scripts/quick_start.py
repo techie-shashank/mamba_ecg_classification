@@ -21,7 +21,7 @@ sys.path.insert(0, str(src_dir))
 # Store original directory and project root for file operations
 original_dir = os.getcwd()
 
-from experiment_examples import run_comprehensive_search
+from experiment_examples import run_defined_experiments
 from src.logger import get_experiment_logger
 
 # Clear any existing handlers to ensure fresh logger
@@ -38,7 +38,7 @@ def run_multiple_experiments(datasets=None, models=None):
     logger.info("🚀 Starting multiple experiments...")
     
     try:
-        runner = run_comprehensive_search()
+        runner = run_defined_experiments()
         runner.run_all_experiments()
         logger.info("✅ Experiments completed successfully")
         return True
@@ -92,13 +92,13 @@ def main():
             logger.error("❌ Experiment phase failed")
         
         # Parse experiments
-        logger.info("\n" + "="*40)
-        logger.info("PHASE 2: PARSING EXPERIMENT DATA")
-        logger.info("="*40)
+        # logger.info("\n" + "="*40)
+        # logger.info("PHASE 2: PARSING EXPERIMENT DATA")
+        # logger.info("="*40)
         
-        if not parse_experiments():
-            success = False
-            logger.error("❌ Parsing phase failed")
+        # if not parse_experiments():
+        #     success = False
+        #     logger.error("❌ Parsing phase failed")
             
     except Exception as e:
         logger.error(f"❌ Critical error in pipeline: {e}")

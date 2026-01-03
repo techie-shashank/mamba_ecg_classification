@@ -11,7 +11,7 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "--dataset", "ptbxl",
-                "--model", "lstm"
+                "--model", "hybrid_serial"
             ]
         },
         {
@@ -79,9 +79,9 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "args": [
-                "--model", "hybrid_crossattn",
+                "--model", "lstm",
                 "--dataset", "ptbxl", 
-                "--run_number", "54",
+                "--run_number", "29",
                 "--ecg_id", "17364"
             ]
         },

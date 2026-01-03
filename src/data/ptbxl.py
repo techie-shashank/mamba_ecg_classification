@@ -306,20 +306,45 @@ def load_data(data_dir: str, sampling_rate: int, limit: int = None) -> tuple[np.
 
 # ===================== Data Splitting =====================
 def split_train_test(
-    X: np.ndarray, Y: pd.DataFrame, y: np.ndarray, test_fold: int = 10, val_ratio: float = 0.5
+    X: np.ndarray, Y: pd.DataFrame, y: np.ndarray, test_fold: int = 10, val_fold: int = 9
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    train_mask = (Y.strat_fold != test_fold)
+    """
+    Split PTB-XL data following the recommended cross-validation strategy:
+    - Folds 1-8: Training set
+    - Fold 9: Validation set (high-quality labels from human evaluation)
+    - Fold 10: Test set (high-quality labels from human evaluation)
+    
+    Args:
+        X: Signal data array
+        Y: Annotation DataFrame with strat_fold column
+        y: Preprocessed labels
+        test_fold: Fold number for test set (default: 10)
+        val_fold: Fold number for validation set (default: 9)
+    
+    Returns:
+        Tuple of (X_train, Y_train, y_train, X_val, Y_val, y_val, X_test, Y_test, y_test)
+    """
+    # Create masks for train, validation, and test sets
+    train_mask = (Y.strat_fold != test_fold) & (Y.strat_fold != val_fold)
+    val_mask = (Y.strat_fold == val_fold)
     test_mask = (Y.strat_fold == test_fold)
+    
+    # Split data using masks
     X_train = X[np.where(train_mask)]
     Y_train = Y[train_mask]
     y_train = y[np.where(train_mask)]
+    
+    X_val = X[np.where(val_mask)]
+    Y_val = Y[val_mask]
+    y_val = y[np.where(val_mask)]
+    
     X_test = X[np.where(test_mask)]
     Y_test = Y[test_mask]
     y_test = y[np.where(test_mask)]
-    X_val, X_test, Y_val, Y_test, y_val, y_test = train_test_split(
-        X_test, Y_test, y_test, test_size=1 - val_ratio, random_state=42
-    )
+    
     logger.info(f"Train: {X_train.shape}, Val: {X_val.shape}, Test: {X_test.shape}")
+    logger.info(f"Train folds: 1-8, Val fold: {val_fold}, Test fold: {test_fold}")
+    
     return X_train, Y_train, y_train, X_val, Y_val, y_val, X_test, Y_test, y_test
 
 # ===================== Visualization =====================
