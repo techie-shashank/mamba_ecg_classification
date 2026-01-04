@@ -134,7 +134,7 @@ def linear_probe_evaluation(train_embeddings, train_labels, test_embeddings, tes
         train_labels: Training labels array
         test_embeddings: Test embeddings array  
         test_labels: Test labels array
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn')
+        model_type: Type of model ('lstm', 'mamba', 'patchtst', 'autoformer', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn', 'resnet50')
         class_names: List of class names
         metrics_dir: Directory to save metrics
         is_multilabel: Whether this is multilabel classification
@@ -374,7 +374,7 @@ def evaluate_linear_probe(model, train_loader, test_loader, model_type: str,
         model: The trained model
         train_loader: Training DataLoader for linear probing
         test_loader: Test DataLoader for linear probing
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn')
+        model_type: Type of model ('lstm', 'mamba', 'patchtst', 'autoformer', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn', 'resnet50')
         class_names: List of class names
         metrics_dir: Directory to save linear probe metrics
         device: Device to run inference on

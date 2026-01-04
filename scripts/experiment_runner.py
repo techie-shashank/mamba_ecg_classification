@@ -402,7 +402,7 @@ def main():
     """Main function for command line usage"""
     parser = argparse.ArgumentParser(description="Run multiple ML experiments")
     parser.add_argument("--datasets", nargs='+', default=['ptbxl'], help="Datasets to test")
-    parser.add_argument("--models", nargs='+', default=['lstm', 'mamba'], help="Models to test")
+    parser.add_argument("--models", nargs='+', default=['lstm', 'mamba', 'patchtst', 'autoformer'], help="Models to test")
     parser.add_argument("--config", default="config.json", help="Base configuration file")
     parser.add_argument("--save-plan", help="Save experiment plan to file")
     parser.add_argument("--load-plan", help="Load experiment plan from file")

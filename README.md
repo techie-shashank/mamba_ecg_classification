@@ -1,13 +1,13 @@
-# Comparative Study of LSTM, MAMBA, and  Hybrid Architectures for ECG Classification
+# Comparative Study of LSTM, MAMBA, PatchTST, Autoformer, and Hybrid Architectures for ECG Classification
 
-This project presents a comparative study of LSTM, MAMBA, and hybrid (MAMBA + LSTM) architectures for ECG signal classification. The goal is to evaluate the performance, robustness, and representation learning capabilities of each model, particularly in handling complex time-series biomedical data.
+This project presents a comparative study of LSTM, MAMBA, PatchTST, Autoformer, and hybrid (MAMBA + LSTM) architectures for ECG signal classification. The goal is to evaluate the performance, robustness, and representation learning capabilities of each model, particularly in handling complex time-series biomedical data.
 
 ## Project Presentation
 📄 [Link to presentation](https://drive.google.com/file/d/1Ax2YCpB9OaVNeMpD-qeII4mFn_9e05IC/view?usp=drive_link)
 
 ## Key Features
 
-- **Multi-Model Support**: LSTM and Mamba architectures for time series classification
+- **Multi-Model Support**: LSTM, Mamba, PatchTST, Autoformer, and Hybrid architectures for time series classification
 - **Interpretability Tools**: Integrated Gradients analysis with multi-ECG batch processing
 - **Experiment Management**: Comprehensive tracking with SQLite database and Streamlit dashboard
 - **ECG Classification**: Specialized pipeline for PTB-XL dataset with 12-lead ECG analysis
@@ -39,6 +39,9 @@ python src/train.py --model lstm --config configs/config.json
 
 # Train Mamba model  
 python src/train.py --model mamba --config configs/config.json
+
+# Train PatchTST model
+python src/train.py --model patchtst --config configs/config.json
 ```
 
 ### 4. Interpretability Analysis

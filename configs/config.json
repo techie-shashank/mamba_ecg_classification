@@ -20,6 +20,27 @@
       "expand": 2,
       "fc_hidden_size": 64
     },
+    "patchtst": {
+      "seq_len": 1000,
+      "patch_len": 16,
+      "stride": 8,
+      "d_model": 160,
+      "n_heads": 2,
+      "num_layers": 1,
+      "dropout": 0.1,
+      "fc_hidden_size": 64
+    },
+    "autoformer": {
+      "seq_len": 1000,
+      "prediction_length": 1,
+      "d_model": 128,
+      "encoder_layers": 2,
+      "decoder_layers": 1,
+      "encoder_attention_heads": 8,
+      "decoder_attention_heads": 8,
+      "dropout": 0.1,
+      "fc_hidden_size": 64
+    },
     "hybrid_serial": {
       "d_model": 160,
       "d_state": 16,
@@ -62,8 +83,12 @@
       "dropout": 0.3,
       "num_attn_heads": 4,
       "fusion_method": "concat"
+    },
+    "resnet50": {
+      "fc_hidden_size": 128,
+      "dropout": 0.3
     }
   },
   "dataset": "ptbxl",
-  "model": "hybrid_serial"
+  "model": "patchtst"
 }

@@ -53,7 +53,7 @@ def generate_tsne_from_embeddings(embeddings, labels, model_type: str, class_nam
     Args:
         embeddings: Pre-extracted embeddings array
         labels: Corresponding labels array
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn')
+        model_type: Type of model ('lstm', 'mamba', 'patchtst', 'autoformer', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn', 'resnet50')
         class_names: List of class names
         save_path: Path to save the plot
         is_multilabel: Whether this is a multilabel classification task
@@ -323,7 +323,7 @@ def generate_tsne_plot(model, data_loader, model_type: str, class_names, save_pa
     Args:
         model: The trained model
         data_loader: DataLoader for the dataset
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn')
+        model_type: Type of model ('lstm', 'mamba', 'patchtst', 'autoformer', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn', 'resnet50')
         class_names: List of class names
         save_path: Path to save the plot
         device: Device to run inference on
@@ -343,7 +343,7 @@ def evaluate_with_tsne(model, test_loader, model_type: str, class_names, plots_d
     Args:
         model: The trained model
         test_loader: Test DataLoader
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn')
+        model_type: Type of model ('lstm', 'mamba', 'patchtst', 'autoformer', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn', 'resnet50')
         class_names: List of class names
         plots_dir: Directory to save t-SNE plots
         device: Device to run inference on
@@ -366,7 +366,7 @@ def evaluate_with_tsne_from_embeddings(test_embeddings, test_labels, model_type:
     Args:
         test_embeddings: Pre-extracted test embeddings
         test_labels: Pre-extracted test labels
-        model_type: Type of model ('lstm', 'mamba', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn')
+        model_type: Type of model ('lstm', 'mamba', 'patchtst', 'autoformer', 'hybrid_serial', 'hybrid_serial_rev', 'hybrid_parallel', 'hybrid_crossattn', 'resnet50')
         class_names: List of class names
         plots_dir: Directory to save t-SNE plots
         is_multilabel: Whether this is a multilabel classification task

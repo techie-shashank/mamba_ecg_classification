@@ -42,4 +42,6 @@ sympy>=1.10.0
 
 python-dotenv
 
+transformers
+
 --extra-index-url https://download.pytorch.org/whl/cu126

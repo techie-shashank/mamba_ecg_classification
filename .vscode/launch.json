@@ -11,7 +11,7 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "--dataset", "ptbxl",
-                "--model", "hybrid_serial"
+                "--model", "resnet50"
             ]
         },
         {

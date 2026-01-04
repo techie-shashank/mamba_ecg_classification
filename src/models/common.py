@@ -4,6 +4,9 @@ import torch
 
 from models.lstm.model import LSTMClassifier
 from models.mamba.model import MambaClassifier
+from models.patchtst.model import PatchTSTClassifier
+from models.autoformer.model import AutoformerClassifier
+from models.resnet50.model import ResNet50Classifier
 from logger import logger
 
 from models.hybrid_serial.model import HybridSerialClassifier
@@ -18,7 +21,7 @@ def get_model_class(model_type):
     Get the model class based on the model type.
 
     Args:
-        model_type (str): Type of the model ("lstm", "mamba").
+        model_type (str): Type of the model ("lstm", "mamba", "patchtst", "autoformer").
 
     Returns:
         class: Model class corresponding to the model type.
@@ -27,6 +30,10 @@ def get_model_class(model_type):
         return LSTMClassifier
     elif model_type.lower() == "mamba":
         return MambaClassifier
+    elif model_type.lower() == "patchtst":
+        return PatchTSTClassifier
+    elif model_type.lower() == "autoformer":
+        return AutoformerClassifier
     elif model_type.lower() == "hybrid_serial":
         return HybridSerialClassifier
     elif model_type.lower() == "hybrid_serial_rev":
@@ -35,6 +42,8 @@ def get_model_class(model_type):
         return HybridParallelClassifier
     elif model_type.lower() == "hybrid_crossattn":
         return HybridCrossAttentionClassifier
+    elif model_type.lower() == "resnet50":
+        return ResNet50Classifier
     else:
         raise ValueError(f"Unsupported model type: {model_type}")
 

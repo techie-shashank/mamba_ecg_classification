@@ -11,7 +11,7 @@ logger = get_experiment_logger('experiment_examples')
 # Parameter counts matched to successful runs
 DEFINED_CONFIGS = {
     "datasets": ["ptbxl"],
-    "models": ["lstm", "mamba", "hybrid_serial"],
+    "models": ["resnet50"],
     "hyperparameter_grids": {
         "lstm": {
             "hidden_size": [192],
@@ -23,6 +23,29 @@ DEFINED_CONFIGS = {
             "d_state": [16],
             "d_conv": [4],
             "expand": [2]
+        },
+        "patchtst": {
+            "seq_len": [1000],
+            "patch_len": [16],
+            "stride": [8],
+            "d_model": [160],
+            "n_heads": [2],
+            "num_layers": [1],
+            "dropout": [0.1]
+        },
+        "autoformer": {
+            "seq_len": [1000],
+            "prediction_length": [1],
+            "d_model": [128],
+            "encoder_layers": [2],
+            "decoder_layers": [1],
+            "encoder_attention_heads": [8],
+            "decoder_attention_heads": [8],
+            "dropout": [0.1]
+        },
+        "resnet50": {
+            "fc_hidden_size": [128],
+            "dropout": [0.3]
         },
         "hybrid_serial": {
             "d_model": [160],
@@ -46,7 +69,7 @@ DEFINED_CONFIGS = {
 # Alternative: Grid search for experimentation (commented out)
 COMPREHENSIVE_SEARCH = {
     "datasets": ["ptbxl"],
-    "models": ["lstm", "mamba", "hybrid_serial", "hybrid_serial_rev", "hybrid_parallel", "hybrid_crossattn"],
+    "models": ["lstm", "mamba", "patchtst", "resnet50", "autoformer", "hybrid_serial", "hybrid_serial_rev", "hybrid_parallel", "hybrid_crossattn"],
     "hyperparameter_grids": {
         "lstm": {
             "hidden_size": [128, 256],
@@ -58,6 +81,25 @@ COMPREHENSIVE_SEARCH = {
             "d_state": [16, 32, 64],
             "d_conv": [2, 4],
             "expand": [2]
+        },
+        "patchtst": {
+            "seq_len": [1000],
+            "patch_len": [16, 32],
+            "stride": [8, 16],
+            "d_model": [128, 256],
+            "n_heads": [4, 8],
+            "num_layers": [2, 3],
+            "dropout": [0.1, 0.2]
+        },
+        "autoformer": {
+            "seq_len": [1000],
+            "prediction_length": [1],
+            "d_model": [128, 256],
+            "encoder_layers": [2, 3],
+            "decoder_layers": [1, 2],
+            "encoder_attention_heads": [4, 8],
+            "decoder_attention_heads": [4, 8],
+            "dropout": [0.1, 0.2]
         },
         "hybrid_serial": {
             "d_model": [64, 128],
@@ -89,6 +131,10 @@ COMPREHENSIVE_SEARCH = {
             "dropout": [0.3],
             "num_attn_heads": [4, 8],
             "fusion_method": ["concat"]
+        },
+        "resnet50": {
+            "fc_hidden_size": [128],
+            "dropout": [0.3]
         }
     },
     "global_param_grid": {
@@ -108,7 +154,7 @@ def run_defined_experiments():
     # Save experiment plan
     runner.save_experiment_plan("outputs/defined_experiments.json")
     logger.info(f"Generated {len(runner.experiment_configs)} experiments with defined configurations")
-    logger.info("All models use d_model/hidden_size ∈ {256, 128}: LSTM(256/2), MAMBA(256), Hybrids(256/64)")
+    logger.info("All models use d_model/hidden_size ∈ {256, 128}: LSTM(256/2), MAMBA(256), PatchTST(128), Hybrids(256/64)")
     return runner
 
 def run_comprehensive_search():

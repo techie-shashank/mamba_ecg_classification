@@ -2,7 +2,7 @@
 #SBATCH --job-name=mamba_run                     # Job name
 #SBATCH --output=outputs/logs/mamba_%j.out      # Standard output (%j = JobID)
 #SBATCH --error=outputs/logs/mamba_%j.err       # Standard error
-#SBATCH --gres=gpu:4                             # Request 8 GPU
+#SBATCH --gres=gpu:1                             # Request 8 GPU
 #SBATCH --time=1-00:00:00                           # Max runtime
 
 # Load modules
